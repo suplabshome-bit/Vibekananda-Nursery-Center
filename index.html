@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSC বালবিদ্যালয় স্মার্ট মোবাইল অ্যাপ (ক্লাউড সিঙ্ক)</title>
+    <title>CSC বালবিদ্যালয় স্মার্ট মোবাইল অ্যাপ (কাস্টম পিন ও ক্লাউড সিঙ্ক)</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -40,14 +40,13 @@
         .navbar h2 { font-size: 16px; }
         .nav-controls { display: flex; gap: 8px; align-items: center; }
         
-        .role-select {
-            padding: 6px;
+        .role-display {
+            padding: 6px 10px;
             border-radius: 4px;
-            border: none;
             font-size: 13px;
             font-weight: bold;
-            background: #fff;
-            color: #2c3e50;
+            background: #e74c3c;
+            color: white;
         }
         .menu-toggle {
             background: #34495e;
@@ -142,12 +141,36 @@
         .marks-table th, .marks-table td { padding: 5px; border: 1px solid #333; text-align: center; font-size: 12px; }
 
         @media print {
-            .navbar, .mobile-menu, .btn, form, h2, .dashboard-grid, .table-responsive { display: none !important; }
+            .navbar, .mobile-menu, .btn, form, h2, .dashboard-grid, .table-responsive, #login-screen { display: none !important; }
             .print-container { display: block !important; border: none; padding: 0; }
         }
     </style>
 </head>
 <body>
+
+    <div id="login-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <h2 style="text-align: center; margin-bottom: 20px; color: #2c3e50; font-size: 20px;">🔒 স্কুল ম্যানেজমেন্ট লগইন</h2>
+            
+            <div class="form-group">
+                <label>আপনার রোল বা পদবি বাছুন:</label>
+                <select id="login-role">
+                    <option value="Admin">🛠️ Admin</option>
+                    <option value="Principal">👨‍💼 Principal</option>
+                    <option value="Teacher">👩‍🏫 Teacher</option>
+                    <option value="Guardian">👪 Guardian (পিন লাগবে না)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="pin-group">
+                <label>সিকিউরিটি পিন (PIN):</label>
+                <input type="password" id="login-pin" placeholder="পিন নম্বর দিন">
+            </div>
+            
+            <button onclick="checkLogin()" style="background-color: #2ecc71; color: white; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">প্রবেশ করুন</button>
+            <p id="login-error" style="color: red; font-size: 13px; text-align: center; margin-top: 10px; display: none;">❌ ভুল পিন নম্বর! আবার চেষ্টা করুন।</p>
+        </div>
+    </div>
 
     <div class="navbar">
         <div class="navbar-brand">
@@ -155,12 +178,7 @@
             <h2 id="app-title">CSC বালবিদ্যালয়</h2>
         </div>
         <div class="nav-controls">
-            <select id="userRole" class="role-select" onchange="onRoleChange()">
-                <option value="Admin">🛠️ Admin</option>
-                <option value="Principal">👨‍💼 Principal</option>
-                <option value="Teacher">👩‍🏫 Teacher</option>
-                <option value="Guardian">👪 Guardian</option>
-            </select>
+            <span id="current-role-badge" class="role-display">Admin</span>
             <button class="menu-toggle" onclick="toggleMenu()">☰ মেনু</button>
         </div>
         
@@ -176,6 +194,8 @@
             <button onclick="navTo('idcard')" id="m-idcard">🪪 আইডি কার্ড</button>
             <button onclick="navTo('admit')" id="m-admit">🎟️ এডমিট কার্ড</button>
             <button onclick="navTo('marksheet')" id="m-marksheet">📈 মার্কশিট</button>
+            <button onclick="navTo('settings')" id="m-settings" class="restrict-guardian">⚙️ পিন কোড পরিবর্তন</button>
+            <button onclick="logout()" style="background-color: #e74c3c; color: white; font-weight: bold; text-align: center;">🚪 লগআউট করুন</button>
         </div>
     </div>
 
@@ -197,7 +217,7 @@
             <h2>স্কুল ইনফরমেশন ও লোগো আপডেট (শুধুমাত্র অ্যাডমিন)</h2>
             <form id="school-form" onsubmit="saveSchoolInfo(event)">
                 <div class="form-group"><label>স্কুলের নাম:</label><input type="text" id="sch-name" required></div>
-                <div class="form-group"><label>ঠিকানা/ঠিকানার সাবটাইটেল:</label><input type="text" id="sch-addr" placeholder="যেমন: প্লে-跨ুল আইডি কার্ড বা ত্রিপুরা"></div>
+                <div class="form-group"><label>ঠিকানা/ঠিকানার সাবটাইটেল:</label><input type="text" id="sch-addr" placeholder="যেমন: প্লে-স্কুল আইডি কার্ড বা ত্রিপুরা"></div>
                 <div class="form-group"><label>স্কুল লোগো আপলোড:</label><input type="file" id="sch-logo" accept="image/*" onchange="processSchoolLogo()"></div>
                 <button type="submit" class="btn btn-success">তথ্য ক্লাউডে সেভ করুন</button>
             </form>
@@ -210,7 +230,7 @@
                 <div class="form-group"><label>ইউজার রোল / পদবি:</label>
                     <select id="u-role"><option value="Admin">Admin</option><option value="Principal">Principal</option><option value="Teacher">Teacher</option></select>
                 </div>
-                <div class="form-group"><label>পাসওয়ার্ড/পিন কোড:</label><input type="password" id="u-pass" placeholder="ঐচ্ছিক পিন"></div>
+                <div class="form-group"><label>ডিফল্ট পিন কোড:</label><input type="password" id="u-pass" required placeholder="লগইন পিন দিন"></div>
                 <button type="submit" class="btn">ইউজার তৈরি করুন</button>
             </form>
             <h3 style="margin-top:15px; font-size:14px; margin-bottom:8px;">চলতি ইউজারদের তালিকা:</h3>
@@ -233,7 +253,7 @@
         <div id="section-admission" class="app-section">
             <h2>নতুন শিক্ষার্থীর ভর্তি ফর্ম (ডকুমেন্টসহ)</h2>
             <form id="admission-form" onsubmit="registerStudent(event)">
-                <div class="form-group"><label>শিক্ষার্থীর পুরো নাম *</label><input type="text" id="s-name" required></div>
+                <div class="form-group"><label>实时 শিক্ষার্থীর পুরো নাম *</label><input type="text" id="s-name" required></div>
                 <div class="form-group"><label>ক্লাস *</label><select id="s-class"><option>Nursery</option><option>LKG</option><option>UKG</option></select></div>
                 <div class="form-group"><label>অভিভাবকের নাম *</label><input type="text" id="s-guard" required></div>
                 <div class="form-group"><label>মোবাইল নম্বর *</label><input type="tel" id="s-phone" pattern="[0-9]{10}" required placeholder="10 ডিজিট"></div>
@@ -283,7 +303,6 @@
             <h2>পরীক্ষার এডমিট কার্ড জেনারেটর</h2>
             <div class="form-group"><label>শিক্ষার্থী বাছুন:</label><select id="admit-select" onchange="genAdmit()"></select></div>
             <button onclick="window.print()" class="btn btn-warning" id="p-admit" style="display:none;">🖨️ এডমিট কার্ড প্রিন্ট / PDF</button>
-            <div id="id-out" class="print-container"></div>
             <div id="admit-out" class="print-container"></div>
         </div>
 
@@ -298,11 +317,30 @@
             <div id="mark-out" class="print-container"></div>
         </div>
 
+        <div id="section-settings" class="app-section">
+            <h2>⚙️ সিকিউরিটি পিন কোড পরিবর্তন করুন</h2>
+            <form id="pin-change-form" onsubmit="changeUserPin(event)">
+                <div class="form-group">
+                    <label>বর্তমান রোল:</label>
+                    <input type="text" id="pc-role" readonly style="background: #e9ecef; font-weight: bold;">
+                </div>
+                <div class="form-group">
+                    <label>নতুন পিন কোড (New PIN):</label>
+                    <input type="password" id="pc-newpin" required placeholder="৪ বা ততোধিক সংখ্যার নতুন পিন">
+                </div>
+                <div class="form-group">
+                    <label>নতুন পিনটি আবার টাইপ করুন:</label>
+                    <input type="password" id="pc-confpin" required placeholder="আবার নতুন পিনটি দিন">
+                </div>
+                <button type="submit" class="btn btn-success">পিন কোড ক্লাউডে আপডেট করুন</button>
+            </form>
+        </div>
+
     </div>
 
     <script>
         // *** ১. আপনার Firebase কনফিগারেশনটি এখানে বসান ***
-       const firebaseConfig = {
+        const firebaseConfig = {
 
   apiKey: "AIzaSyBBmD0MIyVDanfpKwqW9cF-8bhrofKd4V0",
 
@@ -322,7 +360,6 @@
 
 };
 
-
         // Firebase ইনিশিয়েলাইজ করা
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -332,8 +369,12 @@
         let fees = [];
         let attendance = {};
         let notices = [];
+        
+        // ডিফল্ট বা মাস্টার পিন কোড ট্র্যাকিং (যা ক্লাউড থেকে লোড হবে)
+        let rolePins = { "Admin": "1234", "Principal": "5555", "Teacher": "7777" };
         let users = [];
         let schoolInfo = { name: "CSC বালবিদ্যালয়", addr: "প্লে-স্কুল আইডি কার্ড", logo: "" };
+        let currentUserRole = "Admin"; 
 
         let tempPhoto = "";
         let tempDoc = "";
@@ -341,6 +382,69 @@
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('attendance-date').value = today;
+
+        document.getElementById('login-role').addEventListener('change', function() {
+            const pinGroup = document.getElementById('pin-group');
+            if(this.value === 'Guardian') { pinGroup.style.display = 'none'; } 
+            else { pinGroup.style.display = 'block'; }
+        });
+
+        // লগইন ভেরিফিকেশন (অনলাইন থেকে আপডেটেড পিন দিয়ে চেক হবে)
+        function checkLogin() {
+            const role = document.getElementById('login-role').value;
+            const pin = document.getElementById('login-pin').value;
+            const errorMsg = document.getElementById('login-error');
+            
+            let isCorrect = false;
+
+            if (role === 'Guardian') {
+                isCorrect = true;
+            } else if (rolePins[role] && pin === rolePins[role]) {
+                isCorrect = true;
+            }
+
+            if (isCorrect) {
+                errorMsg.style.display = 'none';
+                currentUserRole = role;
+                document.getElementById('current-role-badge').innerText = (role === 'Admin' ? '🛠️ Admin' : role === 'Principal' ? '👨‍💼 Principal' : role === 'Teacher' ? '👩‍🏫 Teacher' : '👪 Guardian');
+                onRoleChange(); 
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('login-pin').value = '';
+            } else {
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        // পিন পরিবর্তন করার লজিক
+        function changeUserPin(e) {
+            e.preventDefault();
+            const newPin = document.getElementById('pc-newpin').value;
+            const confPin = document.getElementById('pc-confpin').value;
+
+            if (newPin !== confPin) {
+                alert('❌ দুই জায়গার পিন কোড মিলছে না! আবার চেক করুন।');
+                return;
+            }
+
+            if (currentUserRole === 'Guardian') {
+                alert('❌ অভিভাবকদের পিন পরিবর্তন করার প্রয়োজন নেই।');
+                return;
+            }
+
+            // স্থানীয় ভেরিয়েবলে পিন সেট করা এবং ক্লাউডে পুশ করা
+            rolePins[currentUserRole] = newPin;
+            saveToCloud();
+
+            alert('✅ আপনার রোল (' + currentUserRole + ')-এর সিকিউরিটি পিন সফলভাবে পরিবর্তন হয়েছে!');
+            document.getElementById('pin-change-form').reset();
+            logout(); // পিন চেঞ্জ হলে নিরাপত্তার স্বার্থে অটো লগআউট হবে
+        }
+
+        function logout() {
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('dropdownMenu').style.display = 'none';
+            navTo('dashboard');
+        }
 
         function toggleMenu() {
             const menu = document.getElementById('dropdownMenu');
@@ -365,10 +469,11 @@
             if(sec === 'notice') renderNotices();
             if(sec === 'students') renderStudents();
             if(sec === 'attendance') renderAttendance();
+            if(sec === 'settings') { document.getElementById('pc-role').value = currentUserRole; }
             if(['fees', 'idcard', 'admit', 'marksheet'].includes(sec)) fillDropdowns(sec);
         }
 
-        // রিয়েল-টাইম ক্লাউড সিঙ্ক লিসেনার (যে কোনো একাউন্ট থেকে আপডেট হলেই সবাই দেখতে পাবে)
+        // রিয়েল-টাইম ক্লাউড সিঙ্ক লিসেনার (পিন কোডসহ সিঙ্ক হবে)
         function syncWithCloud() {
             db.ref('csc_balvidyalaya').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -378,6 +483,7 @@
                     attendance = data.attendance || {};
                     notices = data.notices || [];
                     users = data.users || [];
+                    rolePins = data.rolePins || rolePins; // অনলাইন থেকে পিন সিঙ্ক
                     schoolInfo = data.schoolInfo || schoolInfo;
                     tempSchoolLogo = schoolInfo.logo || "";
 
@@ -392,7 +498,6 @@
             });
         }
 
-        // ক্লাউডে ডেটা সেভ করার কমন ফাংশন
         function saveToCloud() {
             db.ref('csc_balvidyalaya').set({
                 students: students,
@@ -400,44 +505,36 @@
                 attendance: attendance,
                 notices: notices,
                 users: users,
+                rolePins: rolePins, // পিন কোড ক্লাউডে সেভ রাখা
                 schoolInfo: schoolInfo
             });
         }
 
-        // রোল বা পারমিশন কন্ট্রোল লজিক (অ্যাডমিন, প্রিন্সিপাল, টিচার, গার্ডিয়ান)
         function onRoleChange() {
-            const role = document.getElementById('userRole').value;
-            
-            // সব নিষেধাজ্ঞা রিসেট করুন
             document.querySelectorAll('.restrict-guardian, .restrict-teacher, .restrict-teacher-view, .restrict-principal-view').forEach(el => el.style.display = 'block');
             document.querySelectorAll('.mobile-menu button').forEach(b => b.style.display = 'block');
 
-            if(role === 'Guardian') {
+            if(currentUserRole === 'Guardian') {
                 document.querySelectorAll('.restrict-guardian').forEach(el => el.style.display = 'none');
                 document.getElementById('m-school-info').style.display = 'none';
                 document.getElementById('m-users').style.display = 'none';
                 document.getElementById('m-admission').style.display = 'none';
                 document.getElementById('m-attendance').style.display = 'none';
                 document.getElementById('m-fees').style.display = 'none';
-                alert('👪 গার্ডিয়ান মোড অ্যাক্টিভ। আপনি শুধুমাত্র ড্যাশবোর্ড, নোটিশ, আইডি ও মার্কশিট দেখতে পাবেন।');
+                document.getElementById('m-settings').style.display = 'none';
             } 
-            else if(role === 'Teacher') {
+            else if(currentUserRole === 'Teacher') {
                 document.querySelectorAll('.restrict-teacher').forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.restrict-teacher-view').forEach(el => el.style.display = 'none');
                 document.getElementById('m-school-info').style.display = 'none';
                 document.getElementById('m-users').style.display = 'none';
                 document.getElementById('m-admission').style.display = 'none';
                 document.getElementById('m-fees').style.display = 'none';
-                alert('👩‍🏫 টিচার মোড অ্যাক্টিভ। আপনি দৈনিক হাজিরা ইনপুট করতে ও সেভ করতে পারবেন। নোটিশ বা সেটিংস বদলাতে পারবেন না।');
             }
-            else if(role === 'Principal') {
+            else if(currentUserRole === 'Principal') {
                 document.querySelectorAll('.restrict-principal-view').forEach(el => el.style.display = 'none');
                 document.getElementById('m-school-info').style.display = 'none';
                 document.getElementById('m-users').style.display = 'none';
-                alert('👨‍💼 প্রিন্সিপাল মোড অ্যাক্টিভ। আপনি নোটিশ বোর্ড জেনারেট, নতুন ভর্তি এবং হাজিরা ম্যানেজ করতে পারবেন।');
-            }
-            else if(role === 'Admin') {
-                alert('🛠️ অ্যাডমিন মোড অ্যাক্টিভ। আপনার কাছে অ্যাপের সম্পূর্ণ কন্ট্রোল রয়েছে।');
             }
             navTo('dashboard');
         }
@@ -479,7 +576,11 @@
             e.preventDefault();
             const name = document.getElementById('u-name').value;
             const role = document.getElementById('u-role').value;
+            const pin = document.getElementById('u-pass').value;
+            
             users.push({ name, role });
+            if(pin) { rolePins[role] = pin; } // নতুন ইউজারের জন্য পিন সেট
+            
             saveToCloud();
             alert('নতুন ইউজার সফলভাবে যুক্ত হয়েছে!');
             document.getElementById('user-form').reset();
