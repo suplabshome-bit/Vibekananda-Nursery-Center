@@ -3,374 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSC বালবিদ্যালয় স্মার্ট মোবাইল অ্যাপ (কাস্টম পিন ও ক্লাউড সিঙ্ক)</title>
+    <title>CSC বালবিদ্যালয় - ম্যানেজমেন্ট সিস্টেম</title>
     
+    <!-- PWA Meta Tags & Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #0d9488;
+            --bg: #f3f4f6;
+            --text: #1f2937;
         }
-        body {
-            background-color: #f5f6fa;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        /* Top Navigation Bar */
-        .navbar {
-            background-color: #2c3e50;
-            color: white;
-            padding: 12px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .navbar-brand { display: flex; align-items: center; gap: 8px; }
-        .navbar-logo { width: 30px; height: 30px; border-radius: 50%; background: #fff; object-fit: cover; display: none; }
-        .navbar h2 { font-size: 16px; }
-        .nav-controls { display: flex; gap: 8px; align-items: center; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding-bottom: 70px; }
         
-        .role-display {
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: bold;
-            background: #e74c3c;
-            color: white;
-        }
-        .menu-toggle {
-            background: #34495e;
-            border: none;
-            color: white;
-            padding: 6px 10px;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        /* Mobile Dropdown Menu */
-        .mobile-menu {
-            display: none;
-            background-color: #34495e;
-            position: absolute;
-            top: 50px; left: 0; width: 100%;
-            box-shadow: 0 4px 5px rgba(0,0,0,0.2);
-            z-index: 99;
-        }
-        .mobile-menu button {
-            background: none; border: none; color: #ecf0f1;
-            width: 100%; text-align: left; padding: 12px 20px;
-            font-size: 15px; border-bottom: 1px solid #2c3e50;
-        }
-        .mobile-menu button.active { background-color: #2c3e50; color: #3498db; font-weight: bold; }
-
-        /* Main Content Wrapper */
-        .main-content { flex: 1; padding: 12px; }
+        /* Header & Nav */
+        header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand img { height: 40px; width: 40px; border-radius: 50%; object-fit: cover; background: white; }
+        .menu-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
         
-        /* Dashboard Layout */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 15px; }
-        .card {
-            background: white; padding: 15px; border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid #3498db;
-        }
-        .card.fees { border-left-color: #2ecc71; }
-        .card.attendance { border-left-color: #f1c40f; }
-        .card h3 { font-size: 12px; color: #7f8c8d; text-transform: uppercase; margin-bottom: 5px; }
-        .card p { font-size: 20px; font-weight: bold; }
+        /* Dropdown Menu */
+        .dropdown { display: none; position: absolute; top: 60px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 200px; z-index: 1000; }
+        .dropdown button { width: 100%; padding: 12px; text-align: left; background: none; border: none; font-size: 14px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .dropdown button:hover { background: #f9f9f9; }
 
-        /* App Sections styling */
-        .app-section {
-            display: none; background: white; padding: 15px;
-            border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px;
-        }
+        /* Login Screen */
+        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--primary); z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-box { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 100%; max-width: 400px; text-align: center; }
+        .login-box h2 { margin-bottom: 20px; color: var(--primary); }
+        .form-group { text-align: left; margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 15px; }
+        .btn-block { width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-block:hover { background: #0b7a70; }
+        .error-msg { color: red; margin-top: 10px; font-size: 14px; display: none; }
+
+        /* Sections */
+        .app-section { display: none; padding: 20px; max-width: 800px; margin: 0 auto; }
         .app-section.active { display: block; }
-        .app-section h2 { font-size: 16px; margin-bottom: 12px; border-bottom: 2px solid #f1f2f6; padding-bottom: 5px; color: #2c3e50;}
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { margin-bottom: 15px; border-bottom: 2px solid var(--secondary); padding-bottom: 5px; color: var(--primary); }
+
+        /* Dashboard Stats */
+        .grid-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        .stat-box { background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--secondary); }
+        .stat-box h5 { color: #6b7280; font-size: 12px; text-transform: uppercase; }
+        .stat-box p { font-size: 22px; font-weight: bold; color: var(--primary); margin-top: 5px; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f3f4f6; }
+        .btn-edit { background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+
+        /* Mobile Bottom Menu */
+        .mobile-menu { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; z-index: 100; }
+        .mobile-menu button { background: none; border: none; padding: 12px; font-size: 12px; color: #6b7280; flex: 1; text-align: center; cursor: pointer; display: none; }
+        .mobile-menu button.active { color: var(--primary); font-weight: bold; }
+        .mobile-menu button span { display: block; font-size: 20px; margin-bottom: 2px; }
+
+        /* Document / ID Outputs */
+        .output-panel { display: none; margin-top: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        .id-card-box { width: 280px; height: 420px; border: 2px solid var(--primary); border-radius: 10px; margin: 0 auto; overflow: hidden; background: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); text-align: center; position: relative; }
+        .id-card-header { background: var(--primary); color: white; padding: 10px; font-size: 12px; }
+        .id-card-logo { width: 35px; height: 35px; border-radius: 50%; background: #fff; object-fit: cover; margin-bottom: 3px; }
+        .id-card-body { padding: 15px; }
+        .id-photo-preview { width: 90px; height: 110px; border: 1px solid #ccc; margin: 0 auto 10px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 12px; background-size: cover; background-position: center; }
+        .id-card-footer { background: var(--primary); color: white; position: absolute; bottom: 0; width: 100%; padding: 5px; font-size: 10px; }
         
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 4px; font-size: 13px; font-weight: bold; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #fff;
-        }
-        .btn {
-            background-color: #3498db; color: white; width: 100%; padding: 12px;
-            border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 5px;
-        }
-        .btn-success { background-color: #2ecc71; }
-        .btn-warning { background-color: #f1c40f; color: #2c3e50; }
-
-        /* Custom Notice List View */
-        .notice-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 10px; border-radius: 4px; margin-bottom: 10px; }
-        .notice-box h4 { font-size: 14px; margin-bottom: 3px; color: #856404; }
-        .notice-box p { font-size: 13px; color: #665b21; }
-        .notice-box small { font-size: 11px; color: #6c757d; }
-
-        /* Responsive Tables */
-        .table-responsive { width: 100%; overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; min-width: 350px; }
-        table th, table td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; font-size: 13px; }
-        table th { background-color: #f8f9fa; font-weight: bold; }
-
-        /* Doc Templates & Prints styling */
-        .print-container { display: none; background: white; padding: 10px; border: 1px dashed #ccc; margin-top: 15px; border-radius: 6px; }
-        .id-card-box {
-            width: 270px; height: 410px; border: 3px solid #2c3e50; border-radius: 10px;
-            margin: 10px auto; background: white; position: relative; overflow: hidden;
-        }
-        .id-card-header { background: #2c3e50; color: white; text-align: center; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px;}
-        .id-card-logo { width: 35px; height: 35px; border-radius: 50%; background: white; object-fit: cover; }
-        .id-card-header h4 { font-size: 13px; text-transform: uppercase; }
-        .id-card-header p { font-size: 9px; opacity: 0.8; }
-        .id-photo-preview { width: 85px; height: 100px; border: 1px solid #ccc; background: #eef2f3; margin: 8px auto; display:flex; align-items:center; justify-content:center; font-size:10px; background-size: cover; background-position: center; }
-        .id-card-body h3 { text-align: center; font-size: 15px; margin-bottom: 8px; }
-        .id-details td { padding: 2px 4px; border: none; font-size: 11px; }
-        .id-card-footer { position: absolute; bottom: 0; width: 100%; background: #2c3e50; color: white; text-align: center; font-size: 9px; padding: 5px; }
-
-        .admit-card-box, .marksheet-box { width: 100%; border: 2px solid #333; padding: 12px; background: white; margin-top: 10px; }
-        .admit-header, .marksheet-header { text-align: center; margin-bottom: 8px; display: flex; flex-direction: column; align-items: center; gap: 4px;}
-        .doc-logo { width: 50px; height: 50px; object-fit: cover; border-radius: 50%; }
-        .admit-title { background: #000; color: #fff; width: 110px; margin: 5px auto; text-align: center; padding: 3px; font-size: 11px; font-weight: bold; }
-        .marks-table th, .marks-table td { padding: 5px; border: 1px solid #333; text-align: center; font-size: 12px; }
-
-        @media print {
-            .navbar, .mobile-menu, .btn, form, h2, .dashboard-grid, .table-responsive, #login-screen { display: none !important; }
-            .print-container { display: block !important; border: none; padding: 0; }
-        }
+        .admit-card-box { border: 2px dashed #000; padding: 20px; width: 100%; max-width: 500px; margin: 0 auto; text-align: left; background: #fff; }
+        .admit-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .admit-title { text-align: center; font-size: 18px; font-weight: bold; margin: 10px 0; letter-spacing: 2px; }
+        
+        .marksheet-box { border: 2px solid #000; padding: 25px; background: #fff; max-width: 600px; margin: 0 auto; text-align: left; }
+        .marksheet-header { text-align: center; border-bottom: 2px double #000; padding-bottom: 10px; margin-bottom: 15px; }
+        .doc-logo { width: 50px; height: 50px; object-fit: cover; }
+        .notice-box { background: #fffde7; border-left: 5px solid #fbc02d; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2c3e50; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: white; padding: 25px; border-radius: 10px; width: 100%; max-width: 360px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-            <h2 style="text-align: center; margin-bottom: 20px; color: #2c3e50; font-size: 20px;">🔒 স্কুল ম্যানেজমেন্ট লগইন</h2>
-            
+    <!-- ১. লগইন স্ক্রিন -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2>🔐 বালবিদ্যালয় লগইন</h2>
             <div class="form-group">
-                <label>আপনার রোল বা পদবি বাছুন:</label>
+                <label>আপনার পদ (Role) নির্বাচন করুন:</label>
                 <select id="login-role">
                     <option value="Admin">🛠️ Admin</option>
                     <option value="Principal">👨‍💼 Principal</option>
                     <option value="Teacher">👩‍🏫 Teacher</option>
-                    <option value="Guardian">👪 Guardian (পিন লাগবে না)</option>
+                    <option value="Guardian">👪 Guardian</option>
                 </select>
             </div>
-            
             <div class="form-group" id="pin-group">
-                <label>সিকিউরিটি পিন (PIN):</label>
-                <input type="password" id="login-pin" placeholder="পিন নম্বর দিন">
+                <label>সিকিউরিটি পিন কোড:</label>
+                <input type="password" id="login-pin" placeholder="৪ ডিজিটের পিন দিন" maxlength="6">
             </div>
-            
-            <button onclick="checkLogin()" style="background-color: #2ecc71; color: white; width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">প্রবেশ করুন</button>
-            <p id="login-error" style="color: red; font-size: 13px; text-align: center; margin-top: 10px; display: none;">❌ ভুল পিন নম্বর! আবার চেষ্টা করুন।</p>
+            <button class="btn-block" onclick="checkLogin()">লগইন করুন</button>
+            <p class="error-msg" id="login-error">❌ ভুল পিন কোড! আবার চেষ্টা করুন।</p>
         </div>
     </div>
 
-    <div class="navbar">
-        <div class="navbar-brand">
-            <img id="app-logo" class="navbar-logo" alt="Logo">
-            <h2 id="app-title">CSC বালবিদ্যালয়</h2>
+    <!-- ২. মূল অ্যাপ্লিকেশনের হেডার -->
+    <header>
+        <div class="brand">
+            <img id="app-logo" src="" alt="Logo" style="display:none;">
+            <h1 id="app-title">CSC বালবিদ্যালয়</h1>
         </div>
-        <div class="nav-controls">
-            <span id="current-role-badge" class="role-display">Admin</span>
-            <button class="menu-toggle" onclick="toggleMenu()">☰ মেনু</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span id="current-role-badge" style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 20px; font-size: 12px;"></span>
+            <button class="menu-btn" onclick="toggleMenu()">☰</button>
         </div>
-        
-        <div class="mobile-menu" id="dropdownMenu">
-            <button onclick="navTo('dashboard')" id="m-dashboard" class="active">📊 ড্যাশবোর্ড</button>
-            <button onclick="navTo('school-info')" id="m-school-info" class="restrict-teacher restrict-principal-view restrict-guardian">🏫 স্কুল প্রোফাইল</button>
-            <button onclick="navTo('users')" id="m-users" class="restrict-teacher restrict-principal-view restrict-guardian">👤 ইউজার লিস্ট</button>
-            <button onclick="navTo('notice')" id="m-notice">📢 নোটিশ বোর্ড</button>
-            <button onclick="navTo('admission')" id="m-admission" class="restrict-guardian restrict-teacher-view">📝 নতুন ভর্তি</button>
-            <button onclick="navTo('students')" id="m-students">👥 ছাত্র তালিকা</button>
-            <button onclick="navTo('attendance')" id="m-attendance" class="restrict-guardian">📅 দৈনিক হাজিরা</button>
-            <button onclick="navTo('fees')" id="m-fees" class="restrict-guardian restrict-teacher-view">💰 ফি কালেকশন (₹)</button>
-            <button onclick="navTo('idcard')" id="m-idcard">🪪 আইডি কার্ড</button>
-            <button onclick="navTo('admit')" id="m-admit">🎟️ এডমিট কার্ড</button>
-            <button onclick="navTo('marksheet')" id="m-marksheet">📈 মার্কশিট</button>
-            <button onclick="navTo('settings')" id="m-settings" class="restrict-guardian">⚙️ পিন কোড পরিবর্তন</button>
-            <button onclick="logout()" style="background-color: #e74c3c; color: white; font-weight: bold; text-align: center;">🚪 লগআউট করুন</button>
+        <!-- ড্রপডাউন মেনু -->
+        <div class="dropdown" id="dropdownMenu">
+            <button id="btn-menu-school-info" onclick="navTo('school-info')">🏫 স্কুল প্রোফাইল</button>
+            <button id="btn-menu-users" onclick="navTo('users')">👥 ইউজার তৈরি</button>
+            <button id="btn-menu-settings" onclick="navTo('settings')">⚙️ পিন পরিবর্তন</button>
+            <button onclick="logout()" style="color: red; font-weight: bold;">Logout 📤</button>
+        </div>
+    </header>
+
+    <!-- ৩. বিভিন্ন সেকশন সমূহ -->
+
+    <!-- ড্যাশবোর্ড সেকশন -->
+    <div id="section-dashboard" class="app-section active">
+        <div class="grid-stats">
+            <div class="stat-box"><h5>মোট শিক্ষার্থী</h5><p id="stat-students">0 জন</p></div>
+            <div class="stat-box"><h5>সংগৃহীত ফি</h5><p id="stat-fees">₹ 0</p></div>
+            <div class="stat-box"><h5>আজকের হাজিরা</h5><p id="stat-attendance">0%</p></div>
+        </div>
+        <div class="card">
+            <h3>📌 সাম্প্রতিক নোটিশ বোর্ড</h3>
+            <div id="notice-list-container">নোটিশ লোড হচ্ছে...</div>
+        </div>
+        <div class="card" id="dash-recent-students-card">
+            <h3>🆕 নতুন ভর্তি হওয়া শিক্ষার্থী</h3>
+            <table id="recent-table">
+                <thead><tr><th>রোল</th><th>নাম</th><th>ক্লাস</th></tr></thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 
-    <div class="main-content">
-
-        <div id="section-dashboard" class="app-section active">
-            <div class="dashboard-grid">
-                <div class="card"><h3>মোট শিক্ষার্থী</h3><p id="stat-students">0 জন</p></div>
-                <div class="card fees"><h3>সংগৃহীত ফি</h3><p id="stat-fees">₹ 0</p></div>
-                <div class="card attendance"><h3>আজকের হাজিরা</h3><p id="stat-attendance">0%</p></div>
-            </div>
-            <h2>সাম্প্রতিক ভর্তি</h2>
-            <div class="table-responsive">
-                <table id="recent-table"><thead><tr><th>রোল</th><th>নাম</th><th>ক্লাস</th></tr></thead><tbody></tbody></table>
-            </div>
-        </div>
-
-        <div id="section-school-info" class="app-section">
-            <h2>স্কুল ইনফরমেশন ও লোগো আপডেট (শুধুমাত্র অ্যাডমিন)</h2>
-            <form id="school-form" onsubmit="saveSchoolInfo(event)">
-                <div class="form-group"><label>স্কুলের নাম:</label><input type="text" id="sch-name" required></div>
-                <div class="form-group"><label>ঠিকানা/ঠিকানার সাবটাইটেল:</label><input type="text" id="sch-addr" placeholder="যেমন: প্লে-স্কুল আইডি কার্ড বা ত্রিপুরা"></div>
+    <!-- স্কুল প্রোফাইল সেকশন -->
+    <div id="section-school-info" class="app-section">
+        <div class="card">
+            <h3>🏫 বিদ্যালয় প্রোফাইল সেটআপ</h3>
+            <form id="school-form">
+                <div class="form-group"><label>বিদ্যালয়ের নাম:</label><input type="text" id="sch-name" required></div>
+                <div class="form-group"><label>ঠিকানা/উপশিরোনাম:</label><input type="text" id="sch-addr" required></div>
                 <div class="form-group"><label>স্কুল লোগো আপলোড:</label><input type="file" id="sch-logo" accept="image/*" onchange="processSchoolLogo()"></div>
-                <button type="submit" class="btn btn-success">তথ্য ক্লাউডে সেভ করুন</button>
+                <button type="submit" class="btn-block">💾 তথ্য ক্লাউডে সেভ করুন</button>
             </form>
         </div>
-
-        <div id="section-users" class="app-section">
-            <h2>নতুন সিস্টেম ইউজার / স্টাফ যোগ করুন</h2>
-            <form id="user-form" onsubmit="createUser(event)">
-                <div class="form-group"><label>ইউজারের নাম:</label><input type="text" id="u-name" required></div>
-                <div class="form-group"><label>ইউজার রোল / পদবি:</label>
-                    <select id="u-role"><option value="Admin">Admin</option><option value="Principal">Principal</option><option value="Teacher">Teacher</option></select>
-                </div>
-                <div class="form-group"><label>ডিফল্ট পিন কোড:</label><input type="password" id="u-pass" required placeholder="লগইন পিন দিন"></div>
-                <button type="submit" class="btn">ইউজার তৈরি করুন</button>
-            </form>
-            <h3 style="margin-top:15px; font-size:14px; margin-bottom:8px;">চলতি ইউজারদের তালিকা:</h3>
-            <div class="table-responsive">
-                <table id="users-table"><thead><tr><th>নাম</th><th>রোল</th></tr></thead><tbody></tbody></table>
-            </div>
-        </div>
-
-        <div id="section-notice" class="app-section">
-            <h2>স্কুল নোটিশ বোর্ড</h2>
-            <form id="notice-form" onsubmit="addNotice(event)" class="restrict-guardian restrict-teacher">
-                <div class="form-group"><label>নোটিশের শিরোনাম:</label><input type="text" id="n-title" required></div>
-                <div class="form-group"><label>বিস্তারিত বিবরণ:</label><textarea id="n-desc" rows="3" required></textarea></div>
-                <button type="submit" class="btn">নোটিশ পোস্ট করুন (ক্লাউড সিঙ্ক)</button>
-            </form>
-            <h3 style="margin-top:15px; font-size:14px; margin-bottom:8px;">চলতি নোটিশসমূহ:</h3>
-            <div id="notice-list-container"></div>
-        </div>
-
-        <div id="section-admission" class="app-section">
-            <h2>নতুন শিক্ষার্থীর ভর্তি ফর্ম (ডকুমেন্টসহ)</h2>
-            <form id="admission-form" onsubmit="registerStudent(event)">
-                <div class="form-group"><label>实时 শিক্ষার্থীর পুরো নাম *</label><input type="text" id="s-name" required></div>
-                <div class="form-group"><label>ক্লাস *</label><select id="s-class"><option>Nursery</option><option>LKG</option><option>UKG</option></select></div>
-                <div class="form-group"><label>অভিভাবকের নাম *</label><input type="text" id="s-guard" required></div>
-                <div class="form-group"><label>মোবাইল নম্বর *</label><input type="tel" id="s-phone" pattern="[0-9]{10}" required placeholder="10 ডিজিট"></div>
-                <div class="form-group"><label>ছাত্র/ছাত্রীর ছবি আপলোড (পাসপোর্ট সাইজ) *</label><input type="file" id="s-photo" accept="image/*" required onchange="processFile('photo')"></div>
-                <div class="form-group"><label>আধার/জন্ম সার্টিফিকেট আপলোড (ডকুমেন্ট)</label><input type="file" id="s-doc" accept="image/*,application/pdf" onchange="processFile('doc')"></div>
-                <button type="submit" class="btn btn-success">ভর্তি কনফার্ম করুন</button>
-            </form>
-        </div>
-
-        <div id="section-students" class="app-section">
-            <h2>সকল শিক্ষার্থীর তালিকা</h2>
-            <div class="table-responsive">
-                <table id="all-students-table"><thead><tr><th>রোল</th><th>নাম</th><th>ক্লাস</th><th>মোবাইল</th><th>নথি</th></tr></thead><tbody></tbody></table>
-            </div>
-        </div>
-
-        <div id="section-attendance" class="app-section">
-            <h2>দৈনিক হাজিরা শিট রেকর্ড (টিচার/প্রিন্সিপাল/অ্যাডমিন)</h2>
-            <div class="form-group">
-                <label>তারিখ নির্বাচন করুন:</label>
-                <input type="date" id="attendance-date" onchange="renderAttendance()">
-            </div>
-            <div class="table-responsive">
-                <table id="attendance-table"><thead><tr><th>রোল</th><th>নাম</th><th>হাজিরা স্ট্যাটাস</th></tr></thead><tbody></tbody></table>
-            </div>
-            <button onclick="saveAttendance()" class="btn btn-success">হাজিরা ডাটা ক্লাউডে সেভ করুন</button>
-        </div>
-
-        <div id="section-fees" class="app-section">
-            <h2>ফি কালেকশন বুক (Indian Rupees - ₹)</h2>
-            <form id="fees-form" onsubmit="collectFee(event)">
-                <div class="form-group"><label>শিক্ষার্থী বাছুন:</label><select id="fee-select" required></select></div>
-                <div class="form-group"><label>টাকার পরিমাণ (₹):</label><input type="number" id="fee-amount" required placeholder="উদাঃ 400"></div>
-                <div class="form-group"><label>ফি ক্যাটাগরি:</label><select id="fee-type"><option>Monthly Fee</option><option>Admission Fee</option><option>Exam Fee</option></select></div>
-                <button type="submit" class="btn">₹ পেমেন্ট রিসিভ করুন</button>
-            </form>
-        </div>
-
-        <div id="section-idcard" class="app-section">
-            <h2>স্মার্ট আইডি কার্ড জেনারেটর</h2>
-            <div class="form-group"><label>শিক্ষার্থী বাছুন:</label><select id="id-select" onchange="genID()"></select></div>
-            <button onclick="window.print()" class="btn btn-warning" id="p-id" style="display:none;">🖨️ আইডি কার্ড প্রিন্ট / PDF</button>
-            <div id="id-out" class="print-container"></div>
-        </div>
-
-        <div id="section-admit" class="app-section">
-            <h2>পরীক্ষার এডমিট কার্ড জেনারেটর</h2>
-            <div class="form-group"><label>শিক্ষার্থী বাছুন:</label><select id="admit-select" onchange="genAdmit()"></select></div>
-            <button onclick="window.print()" class="btn btn-warning" id="p-admit" style="display:none;">🖨️ এডমিট কার্ড প্রিন্ট / PDF</button>
-            <div id="admit-out" class="print-container"></div>
-        </div>
-
-        <div id="section-marksheet" class="app-section">
-            <h2>ডিজিটাল মার্কশিট জেনারেটর</h2>
-            <div class="form-group"><label>শিক্ষার্থী বাছুন:</label><select id="mark-select"></select></div>
-            <div class="form-group"><label>English:</label><input type="number" id="m-eng" value="80" max="100"></div>
-            <div class="form-group"><label>Math:</label><input type="number" id="m-math" value="85" max="100"></div>
-            <div class="form-group"><label>Bengali:</label><input type="number" id="m-ben" value="75" max="100"></div>
-            <button onclick="genMarksheet()" class="btn">মার্কশিট আপডেট করুন</button>
-            <button onclick="window.print()" class="btn btn-warning" id="p-mark" style="display:none;">🖨️ মার্কশিট প্রিন্ট / PDF</button>
-            <div id="mark-out" class="print-container"></div>
-        </div>
-
-        <div id="section-settings" class="app-section">
-            <h2>⚙️ সিকিউরিটি পিন কোড পরিবর্তন করুন</h2>
-            <form id="pin-change-form" onsubmit="changeUserPin(event)">
-                <div class="form-group">
-                    <label>বর্তমান রোল:</label>
-                    <input type="text" id="pc-role" readonly style="background: #e9ecef; font-weight: bold;">
-                </div>
-                <div class="form-group">
-                    <label>নতুন পিন কোড (New PIN):</label>
-                    <input type="password" id="pc-newpin" required placeholder="৪ বা ততোধিক সংখ্যার নতুন পিন">
-                </div>
-                <div class="form-group">
-                    <label>নতুন পিনটি আবার টাইপ করুন:</label>
-                    <input type="password" id="pc-confpin" required placeholder="আবার নতুন পিনটি দিন">
-                </div>
-                <button type="submit" class="btn btn-success">পিন কোড ক্লাউডে আপডেট করুন</button>
-            </form>
-        </div>
-
     </div>
 
+    <!-- ইউজার তৈরি সেকশন -->
+    <div id="section-users" class="app-section">
+        <div class="card">
+            <h3>👥 স্টাফ ও শিক্ষক অ্যাকাউন্ট তৈরি (Only Admin)</h3>
+            <form id="user-form">
+                <div class="form-group"><label>স্টাফ/শিক্ষকের নাম:</label><input type="text" id="u-name" required></div>
+                <div class="form-group">
+                    <label>পদবি (Role):</label>
+                    <select id="u-role">
+                        <option value="Principal">👨‍💼 Principal</option>
+                        <option value="Teacher">👩‍🏫 Teacher</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>লগইন সিকিউরিটি পিন (ইচ্ছাধীন):</label><input type="password" id="u-pass" placeholder="ডিফল্ট পরিবর্তন করতে"></div>
+                <button type="submit" class="btn-block">➕ ইউজার যোগ করুন</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>📋 সকল ইউজার তালিকা</h3>
+            <table id="users-table">
+                <thead><tr><th>স্টাফ নাম</th><th>রোল / পদবি</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- নোটিশ বোর্ড সেকশন -->
+    <div id="section-notice" class="app-section">
+        <div class="card">
+            <h3>📢 নতুন নোটিশ জারি করুন</h3>
+            <form id="notice-form">
+                <div class="form-group"><label>নোটিশের শিরোনাম:</label><input type="text" id="n-title" required></div>
+                <div class="form-group"><label>বিস্তারিত বার্তা:</label><textarea id="n-desc" rows="4" required></textarea></div>
+                <button type="submit" class="btn-block">🚀 নোটিশ পাবলিশ করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- শিক্ষার্থী তালিকা সেকশন -->
+    <div id="section-students" class="app-section">
+        <div class="card">
+            <h3>📋 বিদ্যালয়ের সকল শিক্ষার্থী</h3>
+            <table id="all-students-table">
+                <thead><tr><th>রোল</th><th>নাম</th><th>শ্রেণী</th><th>মোবাইল</th><th>নথিপত্র</th><th class="admin-action-header">অ্যাকশন</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- স্টুডেন্ট প্রোফাইল এডিট মডাল/ফর্ম সেকশন (অ্যাডমিনের জন্য) -->
+    <div id="section-edit-student" class="app-section">
+        <div class="card">
+            <h3>✏️ শিক্ষার্থীর প্রোফাইল সংশোধন (Edit Profile)</h3>
+            <form id="edit-student-form">
+                <input type="hidden" id="edit-s-roll">
+                <div class="form-group"><label>শিক্ষার্থীর নাম:</label><input type="text" id="edit-s-name" required></div>
+                <div class="form-group"><label>শ্রেণী (Class):</label><input type="text" id="edit-s-class" required></div>
+                <div class="form-group"><label>অভিভাবকের নাম:</label><input type="text" id="edit-s-guard" required></div>
+                <div class="form-group"><label>মোবাইল নম্বর:</label><input type="tel" id="edit-s-phone" maxlength="10" required></div>
+                <button type="submit" class="btn-block" style="background:#f59e0b;">💾 তথ্য আপডেট করুন</button>
+                <button type="button" class="btn-block" style="background:#6b7280; margin-top:5px;" onclick="navTo('students')">বাতিল করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- নতুন এডমিশন সেকশন -->
+    <div id="section-admission" class="app-section">
+        <div class="card">
+            <h3>🎒 নতুন শিক্ষার্থীর অনলাইন অ্যাডমিশন ফর্ম</h3>
+            <form id="admission-form">
+                <div class="form-group"><label>শিক্ষार्थियों নাম:</label><input type="text" id="s-name" required></div>
+                <div class="form-group"><label>শ্রেণী (Class):</label><input type="text" id="s-class" placeholder="উদাঃ Play, Nursery" required></div>
+                <div class="form-group"><label>অভিভাবকের নাম:</label><input type="text" id="s-guard" required></div>
+                <div class="form-group"><label>মোবাইল নম্বর:</label><input type="tel" id="s-phone" maxlength="10" required></div>
+                <div class="form-group"><label>শিক্ষার্থীর ছবি:</label><input type="file" id="s-photo" accept="image/*" onchange="processFile('photo')"></div>
+                <div class="form-group"><label>জন্ম সনদ/আধার (PDF/Image):</label><input type="file" id="s-doc" accept="image/*" onchange="processFile('doc')"></div>
+                <button type="submit" class="btn-block">📝 ক্লাউড ডেটাবেসে ভর্তি নিশ্চিত করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- হাজিরা বা অ্যাটেনডেন্স সেকশন -->
+    <div id="section-attendance" class="app-section">
+        <div class="card">
+            <h3>📆 দৈনিক ডিজিটাল হাজিরা খাতা</h3>
+            <div class="form-group"><label>তারিখ নির্বাচন:</label><input type="date" id="attendance-date" onchange="renderAttendance()"></div>
+            <table id="attendance-table">
+                <thead><tr><th>রোল</th><th>শিক্ষার্থীর নাম</th><th>উপস্থিতি</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <button id="btn-save-attendance" class="btn-block" onclick="saveAttendance()" style="margin-top:15px;">💾 হাজিরা ক্লাউডে সেভ করুন</button>
+        </div>
+    </div>
+
+    <!-- ফি কালেকশন সেকশন -->
+    <div id="section-fees" class="app-section">
+        <div class="card">
+            <h3>💰 ফিস কালেকশন এন্ট্রি</h3>
+            <form id="fees-form">
+                <div class="form-group"><label>শিক্ষার্থী নির্বাচন:</label><select id="fee-select" required></select></div>
+                <div class="form-group"><label>টাকার পরিমাণ (₹):</label><input type="number" id="fee-amount" placeholder="0.00" required></div>
+                <div class="form-group"><label>ফি-এর ধরণ:</label><input type="text" id="fee-type" placeholder="উদাঃ জানুয়ারী মাসের ফি, এডমিশন ফি" required></div>
+                <button type="submit" class="btn-block">💳 পেমেন্ট রেকর্ড সাবমিট করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- আইডি কার্ড জেনারেটর সেকশন -->
+    <div id="section-idcard" class="app-section">
+        <div class="card">
+            <h3>🪪 ইনস্ট্যান্ট আইডি কার্ড জেনারেটর</h3>
+            <div class="form-group"><label>শিক্ষার্থী নির্বাচন করুন:</label><select id="id-select" onchange="genID()"></select></div>
+            <div class="output-panel" id="id-out"></div>
+            <button class="btn-block" id="p-id" style="display:none;" onclick="window.print()">🖨️ আইডি কার্ড প্রিন্ট করুন</button>
+        </div>
+    </div>
+
+    <!-- এডমিট কার্ড সেকশন -->
+    <div id="section-admit" class="app-section">
+        <div class="card">
+            <h3>🎟️ পরীক্ষার প্রবেশপত্র (Admit Card)</h3>
+            <div class="form-group"><label>শিক্ষার্থী নির্বাচন করুন:</label><select id="admit-select" onchange="genAdmit()"></select></div>
+            <div class="output-panel" id="admit-out"></div>
+            <button class="btn-block" id="p-admit" style="display:none;" onclick="window.print()">🖨️ এডমিট কার্ড প্রিন্ট করুন</button>
+        </div>
+    </div>
+
+    <!-- মার্কশিট সেকশন -->
+    <div id="section-marksheet" class="app-section">
+        <div class="card">
+            <h3>📊 প্রোগ্রেস রিপোর্ট / মার্কশিট জেনারেটর</h3>
+            <div class="form-group"><label>শিক্ষার্থী নির্বাচন করুন:</label><select id="mark-select"></select></div>
+            <div id="marks-input-wrapper" class="grid-stats" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="form-group"><label>English:</label><input type="number" id="m-eng" max="100"></div>
+                <div class="form-group"><label>Math:</label><input type="number" id="m-math" max="100"></div>
+                <div class="form-group"><label>Bengali:</label><input type="number" id="m-ben" max="100"></div>
+            </div>
+            <button id="btn-make-marksheet" class="btn-block" onclick="genMarksheet()">📈 মার্কশিট তৈরি করুন</button>
+            <div class="output-panel" id="mark-out"></div>
+            <button class="btn-block" id="p-mark" style="display:none;" onclick="window.print()">🖨️ প্রোগ্রেস রিপোর্ট প্রিন্ট করুন</button>
+        </div>
+    </div>
+
+    <!-- পিন সেটআপ সেকশন -->
+    <div id="section-settings" class="app-section">
+        <div class="card">
+            <h3>⚙️ সিকিউরিটি পিন কোড পরিবর্তন</h3>
+            <form id="pin-change-form" onsubmit="changeUserPin(event)">
+                <div class="form-group"><label>আপনার বর্তমান রোল:</label><input type="text" id="pc-role" readonly></div>
+                <div class="form-group"><label>নতুন পিন কোড সেট করুন:</label><input type="password" id="pc-newpin" maxlength="6" required></div>
+                <div class="form-group"><label>নতুন পিনটি পুনরায় লিখুন:</label><input type="password" id="pc-confpin" maxlength="6" required></div>
+                <button type="submit" class="btn-block">🔒 পিন কোড আপডেট করুন</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ৪. মোবাইল বটম নেভিগেশন বার -->
+    <div class="mobile-menu">
+        <button id="m-dashboard" onclick="navTo('dashboard')"><span>🏠</span>ড্যাশবোর্ড</button>
+        <button id="m-notice" onclick="navTo('notice')"><span>📢</span>নোটিশ</button>
+        <button id="m-students" onclick="navTo('students')"><span>📋</span>শিক্ষার্থী</button>
+        <button id="m-admission" onclick="navTo('admission')"><span>🎒</span>ভর্তি</button>
+        <button id="m-attendance" onclick="navTo('attendance')"><span>📆</span>হাজিরা</button>
+        <button id="m-fees" onclick="navTo('fees')"><span>💰</span>ফিস</button>
+        <button id="m-idcard" onclick="navTo('idcard')"><span>🪪</span>আইডি</button>
+        <button id="m-admit" onclick="navTo('admit')"><span>🎟️</span>এডমিট</button>
+        <button id="m-marksheet" onclick="navTo('marksheet')"><span>📊</span>মার্কশিট</button>
+    </div>
+
+    <!-- ৫. জাভাস্ক্রিপ্ট লজিক ও কন্ট্রোল -->
     <script>
-        // *** ১. আপনার Firebase কনফিগারেশনটি এখানে বসান ***
+        // *** ১. আপনার Firebase কনফিগারেশন ***
         const firebaseConfig = {
+            apiKey: "AIzaSyBBmD0MIyVDanfpKwqW9cF-8bhrofKd4V0",
+            authDomain: "balvidyalay-685b2.firebaseapp.com",
+            databaseURL: "https://balvidyalay-685b2-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "balvidyalay-685b2",
+            storageBucket: "balvidyalay-685b2.firebasestorage.app",
+            messagingSenderId: "997242063175",
+            appId: "1:997242063175:web:ac64531d52ed531cf26462",
+            measurementId: "G-60RGL5ZT29"
+        };
 
-  apiKey: "AIzaSyBBmD0MIyVDanfpKwqW9cF-8bhrofKd4V0",
-
-  authDomain: "balvidyalay-685b2.firebaseapp.com",
-
-  databaseURL: "https://balvidyalay-685b2-default-rtdb.asia-southeast1.firebasedatabase.app",
-
-  projectId: "balvidyalay-685b2",
-
-  storageBucket: "balvidyalay-685b2.firebasestorage.app",
-
-  messagingSenderId: "997242063175",
-
-  appId: "1:997242063175:web:ac64531d52ed531cf26462",
-
-  measurementId: "G-60RGL5ZT29"
-
-};
-
-        // Firebase ইনিশিয়েলাইজ করা
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // গ্লোবাল মেমোরি ডেটাবেস
         let students = [];
         let fees = [];
         let attendance = {};
         let notices = [];
-        
-        // ডিফল্ট বা মাস্টার পিন কোড ট্র্যাকিং (যা ক্লাউড থেকে লোড হবে)
         let rolePins = { "Admin": "1234", "Principal": "5555", "Teacher": "7777" };
         let users = [];
         let schoolInfo = { name: "CSC বালবিদ্যালয়", addr: "প্লে-স্কুল আইডি কার্ড", logo: "" };
@@ -389,19 +377,14 @@
             else { pinGroup.style.display = 'block'; }
         });
 
-        // লগইন ভেরিফিকেশন (অনলাইন থেকে আপডেটেড পিন দিয়ে চেক হবে)
         function checkLogin() {
             const role = document.getElementById('login-role').value;
             const pin = document.getElementById('login-pin').value;
             const errorMsg = document.getElementById('login-error');
-            
             let isCorrect = false;
 
-            if (role === 'Guardian') {
-                isCorrect = true;
-            } else if (rolePins[role] && pin === rolePins[role]) {
-                isCorrect = true;
-            }
+            if (role === 'Guardian') { isCorrect = true; } 
+            else if (rolePins[role] && pin === rolePins[role]) { isCorrect = true; }
 
             if (isCorrect) {
                 errorMsg.style.display = 'none';
@@ -415,29 +398,18 @@
             }
         }
 
-        // পিন পরিবর্তন করার লজিক
         function changeUserPin(e) {
             e.preventDefault();
             const newPin = document.getElementById('pc-newpin').value;
             const confPin = document.getElementById('pc-confpin').value;
+            if (newPin !== confPin) { alert('❌ দুই জায়গার পিন কোড মিলছে না!'); return; }
+            if (currentUserRole === 'Guardian') { alert('❌ অভিভাবকদের পিন পরিবর্তনের প্রয়োজন নেই।'); return; }
 
-            if (newPin !== confPin) {
-                alert('❌ দুই জায়গার পিন কোড মিলছে না! আবার চেক করুন।');
-                return;
-            }
-
-            if (currentUserRole === 'Guardian') {
-                alert('❌ অভিভাবকদের পিন পরিবর্তন করার প্রয়োজন নেই।');
-                return;
-            }
-
-            // স্থানীয় ভেরিয়েবলে পিন সেট করা এবং ক্লাউডে পুশ করা
             rolePins[currentUserRole] = newPin;
             saveToCloud();
-
-            alert('✅ আপনার রোল (' + currentUserRole + ')-এর সিকিউরিটি পিন সফলভাবে পরিবর্তন হয়েছে!');
+            alert('✅ সিকিউরিটি পিন সফলভাবে পরিবর্তন হয়েছে!');
             document.getElementById('pin-change-form').reset();
-            logout(); // পিন চেঞ্জ হলে নিরাপত্তার স্বার্থে অটো লগআউট হবে
+            logout();
         }
 
         function logout() {
@@ -473,7 +445,6 @@
             if(['fees', 'idcard', 'admit', 'marksheet'].includes(sec)) fillDropdowns(sec);
         }
 
-        // রিয়েল-টাইম ক্লাউড সিঙ্ক লিসেনার (পিন কোডসহ সিঙ্ক হবে)
         function syncWithCloud() {
             db.ref('csc_balvidyalaya').on('value', (snapshot) => {
                 const data = snapshot.val();
@@ -483,7 +454,7 @@
                     attendance = data.attendance || {};
                     notices = data.notices || [];
                     users = data.users || [];
-                    rolePins = data.rolePins || rolePins; // অনলাইন থেকে পিন সিঙ্ক
+                    rolePins = data.rolePins || rolePins;
                     schoolInfo = data.schoolInfo || schoolInfo;
                     tempSchoolLogo = schoolInfo.logo || "";
 
@@ -500,41 +471,50 @@
 
         function saveToCloud() {
             db.ref('csc_balvidyalaya').set({
-                students: students,
-                fees: fees,
-                attendance: attendance,
-                notices: notices,
-                users: users,
-                rolePins: rolePins, // পিন কোড ক্লাউডে সেভ রাখা
-                schoolInfo: schoolInfo
+                students: students, fees: fees, attendance: attendance,
+                notices: notices, users: users, rolePins: rolePins, schoolInfo: schoolInfo
             });
         }
 
+        // কঠোর রোল ভিত্তিক অ্যাক্সেস কন্ট্রোল লজিক
         function onRoleChange() {
-            document.querySelectorAll('.restrict-guardian, .restrict-teacher, .restrict-teacher-view, .restrict-principal-view').forEach(el => el.style.display = 'block');
-            document.querySelectorAll('.mobile-menu button').forEach(b => b.style.display = 'block');
+            // সকল বাটন ও মেনু ডিফল্টভাবে হাইড করি
+            document.querySelectorAll('.mobile-menu button').forEach(b => b.style.display = 'none');
+            document.getElementById('btn-menu-school-info').style.display = 'none';
+            document.getElementById('btn-menu-users').style.display = 'none';
+            document.getElementById('btn-menu-settings').style.display = 'block';
 
-            if(currentUserRole === 'Guardian') {
-                document.querySelectorAll('.restrict-guardian').forEach(el => el.style.display = 'none');
-                document.getElementById('m-school-info').style.display = 'none';
-                document.getElementById('m-users').style.display = 'none';
-                document.getElementById('m-admission').style.display = 'none';
-                document.getElementById('m-attendance').style.display = 'none';
-                document.getElementById('m-fees').style.display = 'none';
-                document.getElementById('m-settings').style.display = 'none';
+            // ১. ড্যাশবোর্ড এবং নোটিশ সব রোলই দেখতে পাবে
+            document.getElementById('m-dashboard').style.display = 'block';
+
+            if(currentUserRole === 'Admin') {
+                document.getElementById('btn-menu-school-info').style.display = 'block';
+                document.getElementById('btn-menu-users').style.display = 'block';
+                document.getElementById('m-students').style.display = 'block';
+                document.getElementById('m-admission').style.display = 'block';
+                document.getElementById('m-attendance').style.display = 'block';
+                document.getElementById('m-fees').style.display = 'block';
+                document.getElementById('m-idcard').style.display = 'block';
+                document.getElementById('m-admit').style.display = 'block';
+                document.getElementById('m-marksheet').style.display = 'block';
             } 
-            else if(currentUserRole === 'Teacher') {
-                document.querySelectorAll('.restrict-teacher').forEach(el => el.style.display = 'none');
-                document.querySelectorAll('.restrict-teacher-view').forEach(el => el.style.display = 'none');
-                document.getElementById('m-school-info').style.display = 'none';
-                document.getElementById('m-users').style.display = 'none';
-                document.getElementById('m-admission').style.display = 'none';
-                document.getElementById('m-fees').style.display = 'none';
-            }
             else if(currentUserRole === 'Principal') {
-                document.querySelectorAll('.restrict-principal-view').forEach(el => el.style.display = 'none');
-                document.getElementById('m-school-info').style.display = 'none';
-                document.getElementById('m-users').style.display = 'none';
+                document.getElementById('m-notice').style.display = 'block'; // নোটিশ জারি করতে পারবে
+                document.getElementById('m-students').style.display = 'block';
+                document.getElementById('m-admission').style.display = 'block'; // নিউ এডমিশন পারবে
+                document.getElementById('m-idcard').style.display = 'block'; // আই কার্ড পারবে
+                document.getElementById('m-admit').style.display = 'block'; // এডমিট পারবে
+            }
+            else if(currentUserRole === 'Teacher') {
+                document.getElementById('m-attendance').style.display = 'block'; // ডেইলি এটেনডেন্স
+                document.getElementById('m-marksheet').style.display = 'block'; // মার্কশিট জেনারেট
+            }
+            else if(currentUserRole === 'Guardian') {
+                document.getElementById('btn-menu-settings').style.display = 'none';
+                document.getElementById('m-students').style.display = 'block'; // স্টুডেন্ট লিস্ট (ডাউনলোড এর জন্য)
+                document.getElementById('m-idcard').style.display = 'block'; // ভিউ/ডাউনলোড আইডি
+                document.getElementById('m-admit').style.display = 'block'; // ভিউ/ডাউনলোড এডমিট
+                document.getElementById('m-marksheet').style.display = 'block'; // ভিউ/ডাউনলোড মার্কশিট
             }
             navTo('dashboard');
         }
@@ -552,37 +532,33 @@
         }
 
         function saveSchoolInfo(e) {
-            e.preventDefault();
+            if(e) e.preventDefault();
             schoolInfo.name = document.getElementById('sch-name').value;
             schoolInfo.addr = document.getElementById('sch-addr').value;
             schoolInfo.logo = tempSchoolLogo;
             saveToCloud();
-            alert('স্কুল প্রোফাইল ক্লাউডে আপডেট হয়েছে!');
+            alert('স্কুল প্রোফাইল ক্লাউডে আপডেট হয়েছে!');
             navTo('dashboard');
         }
 
         function applySchoolStyles() {
             document.getElementById('app-title').innerText = schoolInfo.name;
             const logoEl = document.getElementById('app-logo');
-            if(schoolInfo.logo) {
-                logoEl.src = schoolInfo.logo;
-                logoEl.style.display = 'block';
-            } else {
-                logoEl.style.display = 'none';
-            }
+            if(schoolInfo.logo) { logoEl.src = schoolInfo.logo; logoEl.style.display = 'block'; } 
+            else { logoEl.style.display = 'none'; }
         }
 
         function createUser(e) {
-            e.preventDefault();
+            if(e) e.preventDefault();
             const name = document.getElementById('u-name').value;
             const role = document.getElementById('u-role').value;
             const pin = document.getElementById('u-pass').value;
             
             users.push({ name, role });
-            if(pin) { rolePins[role] = pin; } // নতুন ইউজারের জন্য পিন সেট
+            if(pin) { rolePins[role] = pin; }
             
             saveToCloud();
-            alert('নতুন ইউজার সফলভাবে যুক্ত হয়েছে!');
+            alert('নতুন ইউজার আইডি সফলভাবে যুক্ত হয়েছে!');
             document.getElementById('user-form').reset();
         }
 
@@ -604,7 +580,7 @@
         }
 
         function registerStudent(e) {
-            e.preventDefault();
+            if(e) e.preventDefault();
             const name = document.getElementById('s-name').value;
             const sClass = document.getElementById('s-class').value;
             const guardian = document.getElementById('s-guard').value;
@@ -612,174 +588,325 @@
 
             students.push({ roll: students.length + 1, name, class: sClass, guardian, phone, photo: tempPhoto, doc: tempDoc });
             saveToCloud();
-            alert('শিক্ষার্থী সফলভাবে ক্লাউডে ভর্তি হয়েছে!');
+            alert('শিক্ষার্থী সফলভাবে ভর্তি নিশ্চিত হয়েছে!');
             document.getElementById('admission-form').reset();
             tempPhoto = ""; tempDoc = "";
             navTo('dashboard');
         }
 
         function renderStudents() {
-            const tbody = document.querySelector('#all-students-table tbody'); 
-            if(!tbody) return;
+            const tbody = document.querySelector('#all-students-table tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
-            students.forEach(s => { 
-                const hasDoc = s.doc ? "✅ আপলোডেড" : "❌ নেই";
-                tbody.innerHTML += `<tr><td>${s.roll}</td><td><b>${s.name}</b></td><td>${s.class}</td><td>${s.phone}</td><td>${hasDoc}</td></tr>`; 
+
+            // অ্যাডমিন অ্যাকশন কলাম হ্যান্ডল করা
+            const actionHeader = document.querySelector('.admin-action-header');
+            if (currentUserRole === 'Admin') { actionHeader.style.display = 'table-cell'; } 
+            else { actionHeader.style.display = 'none'; }
+
+            students.forEach((s, idx) => {
+                const docLink = s.doc ? `<a href="${s.doc}" download="document_${s.roll}.png">⬇️ ডাউনলোড</a>` : 'নাই';
+                let editBtnHtml = currentUserRole === 'Admin' ? `<td><button class="btn-edit" onclick="openEditStudent(${idx})">✏️ Edit</button></td>` : '';
+                
+                tbody.innerHTML += `<tr>
+                    <td>${s.roll}</td>
+                    <td><b>${s.name}</b></td>
+                    <td>${s.class}</td>
+                    <td>${s.phone}</td>
+                    <td>${docLink}</td>
+                    ${editBtnHtml}
+                </tr>`;
             });
         }
 
-        function renderAttendance() {
-            const selDate = document.getElementById('attendance-date').value;
-            const tbody = document.querySelector('#attendance-table tbody'); 
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            const dayRecords = attendance[selDate] || {};
+        // স্টুডেন্ট প্রোফাইল এডিট ফাংশন (Admin Only)
+        function openEditStudent(index) {
+            const s = students[index];
+            document.getElementById('edit-s-roll').value = index;
+            document.getElementById('edit-s-name').value = s.name;
+            document.getElementById('edit-s-class').value = s.class;
+            document.getElementById('edit-s-guard').value = s.guardian;
+            document.getElementById('edit-s-phone').value = s.phone;
+            navTo('edit-student');
+        }
+
+        function updateStudentData(e) {
+            if(e) e.preventDefault();
+            const index = document.getElementById('edit-s-roll').value;
+            students[index].name = document.getElementById('edit-s-name').value;
+            students[index].class = document.getElementById('edit-s-class').value;
+            students[index].guardian = document.getElementById('edit-s-guard').value;
+            students[index].phone = document.getElementById('edit-s-phone').value;
             
+            saveToCloud();
+            alert('শিক্ষার্থীর প্রোফাইল সফলভাবে আপডেট করা হয়েছে!');
+            navTo('students');
+        }
+
+        function updateDash() {
+            document.getElementById('stat-students').innerText = students.length + ' জন';
+            const totalFees = fees.reduce((sum, f) => sum + parseInt(f.amount || 0), 0);
+            document.getElementById('stat-fees').innerText = '₹ ' + totalFees;
+
+            const dateInput = document.getElementById('attendance-date').value;
+            const dayAttendance = attendance[dateInput] || {};
+            const totalRecorded = Object.keys(dayAttendance).length;
+            if (totalRecorded > 0 && students.length > 0) {
+                const presents = Object.values(dayAttendance).filter(status => status === 'P').length;
+                const percentage = Math.round((presents / students.length) * 100);
+                document.getElementById('stat-attendance').innerText = percentage + '%';
+            } else {
+                document.getElementById('stat-attendance').innerText = '0%';
+            }
+
+            const recentTbody = document.querySelector('#recent-table tbody');
+            if (recentTbody) {
+                recentTbody.innerHTML = '';
+                [...students].reverse().slice(0, 5).forEach(s => {
+                    recentTbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td><td>${s.class}</td></tr>`;
+                });
+            }
+        }
+
+        function fillDropdowns(sec) {
+            let selectId = '';
+            if (sec === 'fees') selectId = 'fee-select';
+            else if (sec === 'idcard') selectId = 'id-select';
+            else if (sec === 'admit') selectId = 'admit-select';
+            else if (sec === 'marksheet') selectId = 'mark-select';
+
+            const selectEl = document.getElementById(selectId);
+            if (!selectEl) return;
+            
+            const currentVal = selectEl.value;
+            selectEl.innerHTML = '<option value="">--- শিক্ষার্থী নির্বাচন করুন ---</option>';
             students.forEach(s => {
-                const currentStatus = dayRecords[s.roll] || 'P';
-                tbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td><td>
-                    <select data-roll="${s.roll}" class="m-att">
-                        <option value="P" ${currentStatus==='P'?'selected':''}>Present</option>
-                        <option value="A" ${currentStatus==='A'?'selected':''}>Absent</option>
-                    </select>
-                </td></tr>`;
+                selectEl.innerHTML += `<option value="${s.roll}">রোল: ${s.roll} | ${s.name} (${s.class})</option>`;
+            });
+            if (currentVal) selectEl.value = currentVal;
+        }
+
+        function collectFee(e) {
+            if(e) e.preventDefault();
+            const roll = document.getElementById('fee-select').value;
+            const amount = document.getElementById('fee-amount').value;
+            const type = document.getElementById('fee-type').value;
+
+            if (!roll) { alert('অনুগ্রহ করে শিক্ষার্থী নির্বাচন করুন!'); return; }
+
+            fees.push({ roll: parseInt(roll), amount: parseInt(amount), type: type, date: new Date().toLocaleDateString() });
+            saveToCloud();
+            alert('ফি পেমেন্ট রেকর্ড সফলভাবে সেভ হয়েছে!');
+            document.getElementById('fees-form').reset();
+            navTo('dashboard');
+        }
+
+        function renderAttendance() {
+            const tbody = document.querySelector('#attendance-table tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const dateInput = document.getElementById('attendance-date').value;
+            const dayAttendance = attendance[dateInput] || {};
+
+            // শিক্ষকরা কেবল সাবমিট করতে পারবেন, বাকিরা কেবল দেখতে পারবেন
+            const saveBtn = document.getElementById('btn-save-attendance');
+            if(currentUserRole === 'Teacher' || currentUserRole === 'Admin') { saveBtn.style.display = "block"; } 
+            else { saveBtn.style.display = "none"; }
+
+            students.forEach(s => {
+                const currentStatus = dayAttendance[s.roll] || 'P';
+                let actionHtml = (currentUserRole === 'Teacher' || currentUserRole === 'Admin') ? 
+                    `<select data-roll="${s.roll}" class="attendance-select">
+                        <option value="P" ${currentStatus === 'P' ? 'selected' : ''}>🟢 Present</option>
+                        <option value="A" ${currentStatus === 'A' ? 'selected' : ''}>🔴 Absent</option>
+                    </select>` : (currentStatus === 'P' ? '🟢 Present' : '🔴 Absent');
+
+                tbody.innerHTML += `<tr>
+                    <td>${s.roll}</td>
+                    <td><b>${s.name}</b></td>
+                    <td>${actionHtml}</td>
+                </tr>`;
             });
         }
 
         function saveAttendance() {
-            const selDate = document.getElementById('attendance-date').value;
-            let dayRecords = {};
-            document.querySelectorAll('.m-att').forEach(sel => { dayRecords[sel.getAttribute('data-roll')] = sel.value; });
-            attendance[selDate] = dayRecords;
+            const dateInput = document.getElementById('attendance-date').value;
+            if (!dateInput) { alert('তারিখ বাছুন!'); return; }
+            if (!attendance[dateInput]) attendance[dateInput] = {};
+
+            document.querySelectorAll('.attendance-select').forEach(select => {
+                const roll = select.getAttribute('data-roll');
+                attendance[dateInput][roll] = select.value;
+            });
+
             saveToCloud();
-            alert(selDate + ' তারিখের হাজিরা ক্লাউডে সেভ হয়েছে!');
-            navTo('dashboard');
+            alert('আজকের হাজিরা রেকর্ড ক্লাউডে সফলভাবে সেভ হয়েছে!');
+            updateDash();
         }
 
         function addNotice(e) {
-            e.preventDefault();
+            if(e) e.preventDefault();
             const title = document.getElementById('n-title').value;
             const desc = document.getElementById('n-desc').value;
-            notices.unshift({ title, desc, date: new Date().toLocaleDateString('bn-IN') });
+
+            notices.push({ title, desc, date: new Date().toLocaleString() });
             saveToCloud();
+            alert('নতুন নোটিশ জারি করা হয়েছে!');
             document.getElementById('notice-form').reset();
-            alert('নোটিশ সফলভাবে ক্লাউডে ব্রডকাস্ট হয়েছে!');
+            navTo('dashboard');
         }
 
         function renderNotices() {
-            const container = document.getElementById('notice-list-container'); 
-            if(!container) return;
+            const container = document.getElementById('notice-list-container');
+            if (!container) return;
             container.innerHTML = '';
-            if(notices.length === 0) { container.innerHTML = '<p style="font-size:13px; color:#777;">কোনো নোটিশ নেই।</p>'; return; }
-            notices.forEach(n => {
-                container.innerHTML += `<div class="notice-box"><h4>📌 ${n.title}</h4><p>${n.desc}</p><small>তারিখ: ${n.date}</small></div>`;
+            [...notices].reverse().forEach(n => {
+                container.innerHTML += `<div class="notice-box">
+                    <h4>📌 ${n.title}</h4>
+                    <p>${n.desc}</p>
+                    <small>তারিখ: ${n.date}</small>
+                </div>`;
             });
-        }
-
-        function fillDropdowns(sec) {
-            const idMap = { 'fees': 'fee-select', 'idcard': 'id-select', 'admit': 'admit-select', 'marksheet': 'mark-select' };
-            const select = document.getElementById(idMap[sec]);
-            if(!select) return;
-            select.innerHTML = '<option value="">-- বাছুন --</option>';
-            students.forEach(s => { select.innerHTML += `<option value="${s.roll}">${s.name} (রোল: ${s.roll})</option>`; });
-        }
-
-        function collectFee(e) {
-            e.preventDefault();
-            const roll = document.getElementById('fee-select').value;
-            const amount = parseFloat(document.getElementById('fee-amount').value);
-            const type = document.getElementById('fee-type').value;
-            if(!roll) return;
-            fees.push({ name: students.find(s=>s.roll==roll).name, amount, type });
-            saveToCloud();
-            alert('ফি বাবদ ₹' + amount + ' ক্লাউডে জমা হয়েছে!');
-            document.getElementById('fees-form').reset();
-            navTo('dashboard');
         }
 
         function genID() {
             const roll = document.getElementById('id-select').value;
             const out = document.getElementById('id-out');
-            if(!roll) { out.style.display='none'; document.getElementById('p-id').style.display='none'; return;}
-            const s = students.find(i => i.roll == roll);
-            const photoSrc = s.photo ? s.photo : '';
-            const logoHTML = schoolInfo.logo ? `<img src="${schoolInfo.logo}" class="id-card-logo">` : '';
-            
-            out.innerHTML = `<div class="id-card-box">
-                <div class="id-card-header">${logoHTML}<h4>${schoolInfo.name}</h4><p>${schoolInfo.addr}</p></div>
-                <div class="id-photo-preview" style="background-image: url('${photoSrc}')">${s.photo ? '' : 'ফটো স্পেস'}</div>
-                <div class="id-card-body"><h3>${s.name}</h3>
-                <div class="id-details"><table><tr><td>রোল নং:</td><td>${s.roll}</td></tr><tr><td>শ্রেণী:</td><td>${s.class}</td></tr><tr><td>অভিভাবক:</td><td>${s.guardian}</td></tr></table></div>
-                </div><div class="id-card-footer">Authorized Signatory</div>
-            </div>`;
-            out.style.display='block'; document.getElementById('p-id').style.display='block';
+            const btn = document.getElementById('p-id');
+
+            if (!roll) { out.style.display = 'none'; btn.style.display = 'none'; return; }
+            const s = students.find(student => student.roll == roll);
+            if (!s) return;
+
+            out.style.display = 'block';
+            // প্রিন্ট বাটন কেবল এডমিন ও প্রিন্সিপাল দেখতে পাবেন
+            if (currentUserRole === 'Admin' || currentUserRole === 'Principal') btn.style.display = 'block';
+
+            const photoStyle = s.photo ? `background-image: url('${s.photo}'); font-size:0;` : '';
+            out.innerHTML = `
+                <div class="id-card-box">
+                    <div class="id-card-header">
+                        ${schoolInfo.logo ? `<img class="id-card-logo" src="${schoolInfo.logo}">` : ''}
+                        <h4>${schoolInfo.name}</h4>
+                        <p>${schoolInfo.addr}</p>
+                    </div>
+                    <div class="id-card-body">
+                        <div class="id-photo-preview" style="${photoStyle}">ছবি নাই</div>
+                        <h3>${s.name}</h3>
+                        <table class="id-details" style="margin: 0 auto; width: 90%;">
+                            <tr><td><b>শ্রেণী:</b></td><td>${s.class}</td></tr>
+                            <tr><td><b>রোল নং:</b></td><td>${s.roll}</td></tr>
+                            <tr><td><b>অভিভাবক:</b></td><td>${s.guardian}</td></tr>
+                            <tr><td><b>মোবাইল:</b></td><td>${s.phone}</td></tr>
+                        </table>
+                    </div>
+                    <div class="id-card-footer">CSC Tiny Tech • Digital Recognition</div>
+                </div>
+            `;
         }
 
         function genAdmit() {
             const roll = document.getElementById('admit-select').value;
             const out = document.getElementById('admit-out');
-            if(!roll) return;
-            const s = students.find(i => i.roll == roll);
-            const logoHTML = schoolInfo.logo ? `<img src="${schoolInfo.logo}" class="doc-logo">` : '';
+            const btn = document.getElementById('p-admit');
 
-            out.innerHTML = `<div class="admit-card-box">
-                <div class="admit-header">${logoHTML}<h3>${schoolInfo.name}</h3><p>${schoolInfo.addr}</p></div>
-                <div class="admit-title">ADMIT CARD</div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <p><b>নাম:</b> ${s.name}</p><p><b>রোল:</b> ${s.roll}</p><p><b>শ্রেণী:</b> ${s.class}</p>
+            if (!roll) { out.style.display = 'none'; btn.style.display = 'none'; return; }
+            const s = students.find(student => student.roll == roll);
+            if (!s) return;
+
+            out.style.display = 'block';
+            if (currentUserRole === 'Admin' || currentUserRole === 'Principal') btn.style.display = 'block';
+
+            out.innerHTML = `
+                <div class="admit-card-box">
+                    <div class="admit-header">
+                        ${schoolInfo.logo ? `<img class="doc-logo" src="${schoolInfo.logo}">` : ''}
+                        <h2>${schoolInfo.name}</h2>
+                        <p>${schoolInfo.addr}</p>
                     </div>
-                    <div style="width:70px; height:80px; border:1px solid #333; background-image:url('${s.photo||''}'); background-size:cover;"></div>
+                    <div class="admit-title">ADMIT CARD</div>
+                    <table style="width:100%; margin-top:10px;">
+                        <tr><td><b>শিক্ষার্থীর নাম:</b> ${s.name}</td><td><b>শ্রেণী:</b> ${s.class}</td></tr>
+                        <tr><td><b>রোল নং:</b> ${s.roll}</td><td><b>মোবাইল:</b> ${s.phone}</td></tr>
+                    </table>
+                    <p style="margin-top:15px; font-size:11px; text-align:center; border-top:1px solid #ccc; padding-top:5px;">পরীক্ষার হলে প্রবেশপত্রটি সঙ্গে আনা বাধ্যতামূলক।</p>
                 </div>
-                <p style="margin-top:10px; font-size:11px; text-align:center; color: red;">* পরীক্ষা শুরুর ১৫ মিনিট আগে সেন্টারে উপস্থিত হতে হবে।</p>
-            </div>`;
-            out.style.display='block'; document.getElementById('p-admit').style.display='block';
+            `;
         }
 
         function genMarksheet() {
             const roll = document.getElementById('mark-select').value;
             const out = document.getElementById('mark-out');
-            if(!roll) return;
-            const s = students.find(i => i.roll == roll);
-            const e = parseInt(document.getElementById('m-eng').value) || 0;
-            const m = parseInt(document.getElementById('m-math').value) || 0;
-            const b = parseInt(document.getElementById('m-ben').value) || 0;
-            const logoHTML = schoolInfo.logo ? `<img src="${schoolInfo.logo}" class="doc-logo">` : '';
+            const btn = document.getElementById('p-mark');
 
-            out.innerHTML = `<div class="marksheet-box">
-                <div class="marksheet-header">${logoHTML}<h3>${schoolInfo.name}</h3><p>PROGRESS REPORT</p></div>
-                <p><b>নাম:</b> ${s.name} &nbsp;&nbsp; <b>রোল:</b> ${s.roll} &nbsp;&nbsp; <b>শ্রেণী:</b> ${s.class}</p>
-                <table class="marks-table" style="margin-top:10px;">
-                    <tr><th>Subject</th><th>Marks</th></tr>
-                    <tr><td>English</td><td>${e}</td></tr><tr><td>Math</td><td>${m}</td></tr><tr><td>Bengali</td><td>${b}</td></tr>
-                    <tr style="font-weight:bold; background:#eef2f3;"><td>Total Marks</td><td>${e+m+b} / 300</td></tr>
-                </table>
-            </div>`;
-            out.style.display='block'; document.getElementById('p-mark').style.display='block';
-        }
+            if (!roll) { alert('শিক্ষার্থী বাছুন!'); return; }
+            const s = students.find(student => student.roll == roll);
+            if (!s) return;
 
-        function updateDash() {
-            document.getElementById('stat-students').innerText = students.length + ' জন';
-            document.getElementById('stat-fees').innerText = '₹ ' + fees.reduce((sum, f) => sum + f.amount, 0);
-            
-            const selDate = document.getElementById('attendance-date').value;
-            const dayRecords = attendance[selDate] || {};
-            const totalRecorded = Object.keys(dayRecords).length;
-            if(totalRecorded > 0) {
-                const presents = Object.values(dayRecords).filter(v => v === 'P').length;
-                document.getElementById('stat-attendance').innerText = Math.round((presents / totalRecorded) * 100) + '%';
+            // রোল ভিত্তিক ইনপুট ও বাটন নিয়ন্ত্রণ
+            const marksInputWrapper = document.getElementById('marks-input-wrapper');
+            const makeBtn = document.getElementById('btn-make-marksheet');
+            if(currentUserRole === 'Teacher' || currentUserRole === 'Admin') {
+                marksInputWrapper.style.display = "grid";
+                makeBtn.style.display = "block";
             } else {
-                document.getElementById('stat-attendance').innerText = '0%';
+                marksInputWrapper.style.display = "none";
+                makeBtn.style.display = "none";
             }
 
-            const tbody = document.querySelector('#recent-table tbody'); 
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            students.slice(-3).reverse().forEach(s => { tbody.innerHTML += `<tr><td>${s.roll}</td><td>${s.name}</td><td>${s.class}</td></tr>`; });
+            const eng = parseInt(document.getElementById('m-eng').value) || 0;
+            const math = parseInt(document.getElementById('m-math').value) || 0;
+            const ben = parseInt(document.getElementById('m-ben').value) || 0;
+            const total = eng + math + ben;
+
+            out.style.display = 'block';
+            btn.style.display = 'block'; // ডাউনলোড/প্রিন্ট সবার জন্যই উন্মুক্ত
+
+            out.innerHTML = `
+                <div class="marksheet-box">
+                    <div class="marksheet-header">
+                        ${schoolInfo.logo ? `<img class="doc-logo" src="${schoolInfo.logo}">` : ''}
+                        <h2>${schoolInfo.name}</h2>
+                        <p>${schoolInfo.addr}</p>
+                    </div>
+                    <h3 style="text-align:center; margin-bottom:10px;">PROGRESS REPORT</h3>
+                    <p><b>নাম:</b> ${s.name} | <b>শ্রেণী:</b> ${s.class} | <b>রোল:</b> ${s.roll}</p>
+                    <table class="marks-table" style="width:100%; margin-top:10px;">
+                        <thead><tr><th>Subject</th><th>Max Marks</th><th>Marks Obtained</th></tr></thead>
+                        <tbody>
+                            <tr><td>English</td><td>100</td><td>${eng}</td></tr>
+                            <tr><td>Mathematics</td><td>100</td><td>${math}</td></tr>
+                            <tr><td>Bengali</td><td>100</td><td>${ben}</td></tr>
+                            <tr style="font-weight:bold; background:#eee;"><td>Total</td><td>300</td><td>${total}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
         }
-        
-        // শুরুতেই ক্লাউড সিঙ্ক চালু করা
-        syncWithCloud();
+
+        // ফর্ম সাবমিট ইভেন্ট লিসেনার সেটআপ
+        document.getElementById('school-form').addEventListener('submit', saveSchoolInfo);
+        document.getElementById('user-form').addEventListener('submit', createUser);
+        document.getElementById('admission-form').addEventListener('submit', registerStudent);
+        document.getElementById('fees-form').addEventListener('submit', collectFee);
+        document.getElementById('notice-form').addEventListener('submit', addNotice);
+        document.getElementById('edit-student-form').addEventListener('submit', updateStudentData);
+
+        // PWA Service Worker রেজিষ্ট্রেশন (আইকন ভিত্তিক অ্যাপ করার জন্য)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    console.log('Service Worker Registered!');
+                }).catch(err => {
+                    console.log('Service Worker Failed!');
+                });
+            });
+        }
+
+        window.onload = function() {
+            syncWithCloud();
+        };
     </script>
 </body>
 </html>
