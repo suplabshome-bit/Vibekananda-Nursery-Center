@@ -80,10 +80,11 @@
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #f3f4f6; }
         .btn-edit { background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .btn-delete { background: #e11d48; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-left: 5px; }
 
         /* Mobile Bottom Menu */
-        .mobile-menu { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; z-index: 100; }
-        .mobile-menu button { background: none; border: none; padding: 12px; font-size: 12px; color: #6b7280; flex: 1; text-align: center; cursor: pointer; display: none; }
+        .mobile-menu { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; z-index: 100; overflow-x: auto; }
+        .mobile-menu button { background: none; border: none; padding: 12px; font-size: 12px; color: #6b7280; flex: 1; min-width: 70px; text-align: center; cursor: pointer; display: none; }
         .mobile-menu button.active { color: var(--primary); font-weight: bold; }
         .mobile-menu button span { display: block; font-size: 20px; margin-bottom: 2px; }
 
@@ -114,7 +115,8 @@
         .marksheet-box { border: 2px solid #000; padding: 25px; background: #fff; max-width: 600px; margin: 0 auto; text-align: left; }
         .marksheet-header { text-align: center; border-bottom: 2px double #000; padding-bottom: 10px; margin-bottom: 15px; }
         .doc-logo { width: 50px; height: 50px; object-fit: cover; }
-        .notice-box { background: #fffde7; border-left: 5px solid #fbc02d; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .notice-box { background: #fffde7; border-left: 5px solid #fbc02d; padding: 10px; margin-bottom: 10px; border-radius: 4px; position: relative; }
+        .notice-actions { margin-top: 8px; display: flex; gap: 5px; }
 
         /* Report Styles */
         .report-print-container { background: #fff; padding: 20px; border: 1px solid #ccc; margin-top: 15px; border-radius: 5px; text-align: left; }
@@ -232,12 +234,41 @@
     <!-- নোটিশ বোর্ড সেকশন -->
     <div id="section-notice" class="app-section">
         <div class="card">
-            <h3>📢 নতুন নোটিশ জারি করুন</h3>
+            <h3 id="notice-panel-title">📢 টার্গেটেড নোটিশ জারি প্যানেল</h3>
             <form id="notice-form">
+                <input type="hidden" id="edit-notice-index" value="">
+                <div class="form-group">
+                    <label>নোটিশটি কাকে পাঠাতে চান (Recipient):</label>
+                    <select id="n-target-type" onchange="toggleNoticeTargetFields()">
+                        <option value="all">🌍 সাধারণ নোটিশ (সকলের জন্য)</option>
+                        <option value="class">🏫 নির্দিষ্ট ক্লাসের জন্য (Class Wise)</option>
+                        <option value="individual">🎒 নির্দিষ্ট কোনো শিক্ষার্থীর জন্য</option>
+                    </select>
+                </div>
+                
+                <!-- ক্লাস সিলেকশন ড্রপডাউন -->
+                <div class="form-group" id="n-class-wrapper" style="display:none;">
+                    <label>ক্লাস বাছুন:</label>
+                    <select id="n-target-class"></select>
+                </div>
+
+                <!-- শিক্ষার্থী সিলেকশন ড্রপডাউন -->
+                <div class="form-group" id="n-student-wrapper" style="display:none;">
+                    <label>শিক্ষার্থী বাছুন:</label>
+                    <select id="n-target-student"></select>
+                </div>
+
                 <div class="form-group"><label>নোটিশের শিরোনাম:</label><input type="text" id="n-title" required></div>
                 <div class="form-group"><label>বিস্তারিত বার্তা:</label><textarea id="n-desc" rows="4" required></textarea></div>
-                <button type="submit" class="btn-block">🚀 নোটিশ পাবলিশ করুন</button>
+                <button type="submit" id="btn-notice-submit" class="btn-block">🚀 নোটিশ পাবলিশ করুন</button>
+                <button type="button" id="btn-notice-cancel" class="btn-block" style="background:#6b7280; display:none; margin-top:5px;" onclick="cancelNoticeEdit()">বাতিল করুন</button>
             </form>
+        </div>
+        
+        <!-- স্টাফদের প্যানেলে দেখার জন্য ম্যানেজমেন্ট লিস্ট -->
+        <div class="card" id="staff-notice-list-card">
+            <h3>📋 প্রকাশিত সকল নোটিশের তালিকা (ম্যানেজমেন্ট)</h3>
+            <div id="staff-notice-management-container">লোড হচ্ছে...</div>
         </div>
     </div>
 
@@ -258,7 +289,7 @@
             <h3>✏️ শিক্ষার্থীর প্রোফাইল সংশোধন (Edit Profile)</h3>
             <form id="edit-student-form">
                 <input type="hidden" id="edit-s-roll">
-                <div class="form-group"><label>শিক্ষার্থীর নাম:</label><input type="text" id="edit-s-name" required></div>
+                <div class="form-group"><label>暗ক্ষার্থীদের নাম:</label><input type="text" id="edit-s-name" required></div>
                 <div class="form-group"><label>শ্রেণী (Class):</label><input type="text" id="edit-s-class" required></div>
                 <div class="form-group"><label>অভিভাবকের নাম:</label><input type="text" id="edit-s-guard" required></div>
                 <div class="form-group"><label>মোবাইল নম্বর:</label><input type="tel" id="edit-s-phone" maxlength="10" required></div>
@@ -273,11 +304,11 @@
         <div class="card">
             <h3>🎒 নতুন শিক্ষার্থীর অনলাইন অ্যাডমিশন ফর্ম</h3>
             <form id="admission-form">
-                <div class="form-group"><label>细িক্ষার্থীদের নাম:</label><input type="text" id="s-name" required></div>
+                <div class="form-group"><label>शिक्षার্থীর নাম:</label><input type="text" id="s-name" required></div>
                 <div class="form-group"><label>শ্রেণী (Class):</label><input type="text" id="s-class" placeholder="উদাঃ Play, Nursery" required></div>
                 <div class="form-group"><label>অভিভাবকের নাম:</label><input type="text" id="s-guard" required></div>
                 <div class="form-group"><label>মোবাইল নম্বর:</label><input type="tel" id="s-phone" maxlength="10" required></div>
-                <div class="form-group"><label>শিক্ষার্থীর ছবি:</label><input type="file" id="s-photo" accept="image/*" onchange="processFile('photo')"></div>
+                <div class="form-group"><label>शिक्षার্থীর ছবি:</label><input type="file" id="s-photo" accept="image/*" onchange="processFile('photo')"></div>
                 <div class="form-group"><label>জন্ম সনদ/আধার (PDF/Image):</label><input type="file" id="s-doc" accept="image/*" onchange="processFile('doc')"></div>
                 <button type="submit" class="btn-block">📝 ক্লাউড ডেটাবেসে ভর্তি নিশ্চিত করুন</button>
             </form>
@@ -290,7 +321,7 @@
             <h3>📆 দৈনিক ডিজিটাল হাজিরা খাতা</h3>
             <div class="form-group"><label>তারিখ নির্বাচন:</label><input type="date" id="attendance-date" onchange="renderAttendance()"></div>
             <table id="attendance-table">
-                <thead><tr><th>রোল</th><th>শিক্ষার্থীর নাম</th><th>উপস্থিতি</th></tr></thead>
+                <thead><tr><th>রোল</th><th>शिक्षার্থীর নাম</th><th>উপস্থিতি</th></tr></thead>
                 <tbody></tbody>
             </table>
             <button id="btn-save-attendance" class="btn-block" onclick="saveAttendance()" style="margin-top:15px;">💾 হাজিরা ক্লাউডে সেভ করুন</button>
@@ -395,7 +426,7 @@
         </div>
     </div>
 
-    <!-- অভিভাবক বিশেষ ডেডিকেটেড ড্যাশবোর্ড সেকশন (প্রোফাইল + লাইভ এটেনডেন্স ডিসপ্লে) -->
+    <!-- অভিভাবক বিশেষ ডেডিকেটেড ড্যাশবোর্ড সেকশন -->
     <div id="section-guardian-hub" class="app-section">
         <div class="card">
             <h3>👪 অভিভাবক তথ্য কেন্দ্র (Guardian Portal)</h3>
@@ -412,7 +443,7 @@
                 </div>
                 <div class="g-attendance-grid">
                     <div class="g-attn-box" style="border-top: 3px solid #16a34a;">
-                        <span>오늘ের হাজিরা Status</span>
+                        <span>আজকের হাজিরা Status</span>
                         <p id="g-today-status" style="color:#16a34a;">-</p>
                     </div>
                     <div class="g-attn-box" style="border-top: 3px solid #2563eb;">
@@ -422,11 +453,17 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;">
                 <button class="btn-block" style="background:#4f46e5; margin:0;" onclick="viewGuardianDoc('idcard')">🪪 আইডি কার্ড</button>
                 <button class="btn-block" style="background:#0891b2; margin:0;" onclick="viewGuardianDoc('admit')">🎟️ এডমিট কার্ড</button>
                 <button class="btn-block" style="background:#0d9488; margin:0;" onclick="viewGuardianDoc('marksheet')">📊 মার্কশিট</button>
             </div>
+        </div>
+
+        <!-- অভিভাবক ড্যাশবোর্ডে লাইভ নোটিশ ডিসপ্লে উইজেট -->
+        <div class="card">
+            <h3>📢 বিদ্যালয়ের নোটিশ বোর্ড</h3>
+            <div id="guardian-notice-list-container">নোটিশ লোড হচ্ছে...</div>
         </div>
     </div>
 
@@ -553,6 +590,7 @@
                 document.getElementById('m-dashboard').style.display = 'block';
                 document.getElementById('btn-menu-school-info').style.display = 'block';
                 document.getElementById('btn-menu-users').style.display = 'block';
+                document.getElementById('m-notice').style.display = 'block';
                 document.getElementById('m-students').style.display = 'block';
                 document.getElementById('m-admission').style.display = 'block';
                 document.getElementById('m-attendance').style.display = 'block';
@@ -588,11 +626,9 @@
             }
         }
 
-        // অভিভাবক পোর্টালে শিক্ষার্থীর সম্পূর্ণ লাইভ ডাটা লোড প্রসেস
         function renderGuardianProfileWidget() {
             if(!guardianMatchedStudent) return;
             
-            // প্রোফাইল বেসিক তথ্য সেটআপ
             document.getElementById('g-name').innerText = guardianMatchedStudent.name;
             document.getElementById('g-meta').innerText = `শ্রেণী: ${guardianMatchedStudent.class} | রোল নং: ${guardianMatchedStudent.roll}`;
             document.getElementById('g-guardian').innerText = `অভিভাবক: ${guardianMatchedStudent.guardian}`;
@@ -603,7 +639,6 @@
                 document.getElementById('g-avatar').src = "https://via.placeholder.com/150";
             }
 
-            // আজকের লাইভ হাজিরা ট্র্যাকিং
             const todayStr = new Date().toISOString().split('T')[0];
             const todayAttendance = attendance[todayStr] || {};
             const todayStatus = todayAttendance[guardianMatchedStudent.roll];
@@ -620,8 +655,7 @@
                 todayStatusEl.style.color = "#6b7280";
             }
 
-            // মাসিক হাজিরা পরিসংখ্যান ক্যালকুলেশন
-            const currentYearMonth = todayStr.substring(0, 7); // YYYY-MM
+            const currentYearMonth = todayStr.substring(0, 7);
             let totalDaysInMonth = 0;
             let presentDaysInMonth = 0;
 
@@ -643,6 +677,8 @@
             } else {
                 monthStatsEl.innerText = "০ দিন (0%)";
             }
+
+            renderNotices();
         }
 
         function viewGuardianDoc(type) {
@@ -707,7 +743,7 @@
             if(sec === 'dashboard') updateDash();
             if(sec === 'school-info') loadSchoolForm();
             if(sec === 'users') renderUsers();
-            if(sec === 'notice') renderNotices();
+            if(sec === 'notice') { setupNoticeTargetFilters(); renderNotices(); cancelNoticeEdit(); }
             if(sec === 'students') renderStudents();
             if(sec === 'guardian-hub') renderGuardianProfileWidget();
             if(sec === 'attendance') { renderAttendance(); populateClassFilter(); }
@@ -1039,7 +1075,7 @@
             const tableEl = document.getElementById('monthly-report-table');
             tableEl.innerHTML = '';
 
-            let theadHtml = `<tr><th>রোল</th><th>শিক্ষার্থীর নাম</th><th>ক্লাস</th>`;
+            let theadHtml = `<tr><th>রোল</th><th>শিক্ষার্থীর নাম</th><th>শ্রেণী</th>`;
             for(let i=1; i<=totalDays; i++) {
                 theadHtml += `<th style="padding:4px; font-size:10px;">${i}</th>`;
             }
@@ -1104,29 +1140,180 @@
             html2pdf().set(opt).from(element).save();
         }
 
+        /* नोটিশ বোর্ডের আপগ্রেডেড টার্গেটেড, এডিট ও ডিলিট লজিক সমূহ */
+        function setupNoticeTargetFilters() {
+            const classSelect = document.getElementById('n-target-class');
+            const studentSelect = document.getElementById('n-target-student');
+            
+            const classes = [...new Set(students.map(s => s.class))].filter(Boolean);
+            classSelect.innerHTML = '<option value="">-- ক্লাস নির্বাচন করুন --</option>';
+            classes.forEach(c => { classSelect.innerHTML += `<option value="${c}">${c}</option>`; });
+
+            studentSelect.innerHTML = '<option value="">-- শিক্ষার্থী নির্বাচন করুন --</option>';
+            students.forEach(s => { studentSelect.innerHTML += `<option value="${s.roll}">রোল: ${s.roll} | ${s.name} (${s.class})</option>`; });
+        }
+
+        function toggleNoticeTargetFields() {
+            const targetType = document.getElementById('n-target-type').value;
+            document.getElementById('n-class-wrapper').style.display = (targetType === 'class') ? 'block' : 'none';
+            document.getElementById('n-student-wrapper').style.display = (targetType === 'individual') ? 'block' : 'none';
+        }
+
         function addNotice(e) {
             if(e) e.preventDefault();
+            const type = document.getElementById('n-target-type').value;
             const title = document.getElementById('n-title').value;
             const desc = document.getElementById('n-desc').value;
+            const editIdx = document.getElementById('edit-notice-index').value;
+            
+            let targetClass = "";
+            let targetStudentRoll = "";
 
-            notices.push({ title, desc, date: new Date().toLocaleString() });
+            if (type === 'class') {
+                targetClass = document.getElementById('n-target-class').value;
+                if(!targetClass) { alert('দয়া করে নির্দিষ্ট ক্লাসটি সিলেক্ট করুন!'); return; }
+            } else if (type === 'individual') {
+                targetStudentRoll = document.getElementById('n-target-student').value;
+                if(!targetStudentRoll) { alert('দয়া করে নির্দিষ্ট শিক্ষার্থী সিলেক্ট করুন!'); return; }
+            }
+
+            const noticeData = { 
+                type: type, 
+                targetClass: targetClass, 
+                targetStudentRoll: targetStudentRoll,
+                title: title, 
+                desc: desc, 
+                date: editIdx !== "" ? notices[editIdx].date : new Date().toLocaleString() 
+            };
+
+            if(editIdx !== "") {
+                // নোটিশ এডিট সেভ লজিক
+                notices[editIdx] = noticeData;
+                alert('✅ নোটিশটি সফলভাবে সংশোধন করা হয়েছে!');
+            } else {
+                // নতুন নোটিশ পাবলিশ লজিক
+                notices.push(noticeData);
+                alert('🚀 নতুন টার্গেটেড নোটিশ সফলভাবে জারি করা হয়েছে!');
+            }
+            
             saveToCloud();
-            alert('নতুন নোটিশ জারি করা হয়েছে!');
-            document.getElementById('notice-form').reset();
+            cancelNoticeEdit();
             navTo('dashboard');
         }
 
+        // নোটিশ এডিট মোড ওপেন করার ফাংশন
+        function openEditNotice(idx) {
+            const n = notices[idx];
+            document.getElementById('edit-notice-index').value = idx;
+            document.getElementById('n-target-type').value = n.type || 'all';
+            toggleNoticeTargetFields();
+            
+            if(n.type === 'class') document.getElementById('n-target-class').value = n.targetClass || '';
+            if(n.type === 'individual') document.getElementById('n-target-student').value = n.targetStudentRoll || '';
+            
+            document.getElementById('n-title').value = n.title;
+            document.getElementById('n-desc').value = n.desc;
+            
+            document.getElementById('notice-panel-title').innerText = "✏️ নোটিশ সংশোধন (Edit Notice Mode)";
+            document.getElementById('btn-notice-submit').innerText = "💾 সংশোধন নিশ্চিত করুন";
+            document.getElementById('btn-notice-cancel').style.display = "block";
+            
+            document.getElementById('notice-form').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // নোটিশ এডিট বাতিল করার ফাংশন
+        function cancelNoticeEdit() {
+            document.getElementById('edit-notice-index').value = "";
+            document.getElementById('notice-form').reset();
+            toggleNoticeTargetFields();
+            document.getElementById('notice-panel-title').innerText = "📢 টার্গেটেড নোটিশ জারি প্যানেল";
+            document.getElementById('btn-notice-submit').innerText = "🚀 নোটিশ পাবলিশ করুন";
+            document.getElementById('btn-notice-cancel').style.display = "none";
+        }
+
+        // নোটিশ ডিলিট করার ফাংশন
+        function deleteNotice(idx) {
+            if(confirm("🗑️ আপনি কি নিশ্চিতভাবে এই নোটিশটি চিরতরে মুছে ফেলতে চান?")) {
+                notices.splice(idx, 1);
+                saveToCloud();
+                alert("🗑️ নোটিশটি সফলভাবে ডিলিট করা হয়েছে।");
+                cancelNoticeEdit();
+            }
+        }
+
         function renderNotices() {
+            // ১. মূল ড্যাশবোর্ড নোটিশ কন্টেইনার
             const container = document.getElementById('notice-list-container');
-            if (!container) return;
-            container.innerHTML = '';
-            [...notices].reverse().forEach(n => {
-                container.innerHTML += `<div class="notice-box">
-                    <h4>📌 ${n.title}</h4>
-                    <p>${n.desc}</p>
-                    <small>তারিখ: ${n.date}</small>
-                </div>`;
-            });
+            if (container) {
+                container.innerHTML = '';
+                const generalNotices = notices.filter(n => !n.type || n.type === 'all');
+                if(generalNotices.length === 0) {
+                    container.innerHTML = 'কোনো নোটিশ পাওয়া যায়নি।';
+                } else {
+                    [...generalNotices].reverse().forEach(n => {
+                        container.innerHTML += `<div class="notice-box">
+                            <h4>📌 ${n.title}</h4>
+                            <p>${n.desc}</p>
+                            <small>তারিখ: ${n.date}</small>
+                        </div>`;
+                    });
+                }
+            }
+
+            // ২. স্টাফ ম্যানেজমেন্ট নোটিশ লিস্ট (নোটিশ সেকশনে এডিট/ডিলিটের জন্য)
+            const managementContainer = document.getElementById('staff-notice-management-container');
+            if(managementContainer) {
+                managementContainer.innerHTML = '';
+                if(notices.length === 0) {
+                    managementContainer.innerHTML = 'কোনো নোটিশ রেকর্ড নেই।';
+                } else {
+                    // এখানে ক্রমানুসারে ইনডেক্স ঠিক রাখার জন্য রিভার্স লজিক সতর্কতার সাথে করা হয়েছে
+                    for(let i = notices.length - 1; i >= 0; i--) {
+                        const n = notices[i];
+                        let targetText = "সবার জন্য";
+                        if(n.type === 'class') targetText = `ক্লাস: ${n.targetClass}`;
+                        if(n.type === 'individual') targetText = `রোল: ${n.targetStudentRoll} (ব্যক্তিগত)`;
+
+                        managementContainer.innerHTML += `
+                            <div class="notice-box" style="border-left: 5px solid var(--secondary);">
+                                <h4><b>${n.title}</b> <span style="font-size:11px; background:#e2e8f0; padding:2px 6px; border-radius:10px;">🎯 ${targetText}</span></h4>
+                                <p style="margin-top:5px; color:#4b5563;">${n.desc}</p>
+                                <small style="display:block; margin-top:5px; color:#9ca3af;">তারিখ: ${n.date}</small>
+                                <div class="notice-actions">
+                                    <button class="btn-edit" onclick="openEditNotice(${i})">✏️ এডিট</button>
+                                    <button class="btn-delete" onclick="deleteNotice(${i})">🗑️ ডিলিট</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // ৩. গার্জিয়ান বা অভিভাবক পোর্টাল নোটিশ কন্টেইনার
+            const guardianContainer = document.getElementById('guardian-notice-list-container');
+            if (guardianContainer && currentUserRole === 'Guardian' && guardianMatchedStudent) {
+                guardianContainer.innerHTML = '';
+                
+                const myNotices = notices.filter(n => {
+                    if (!n.type || n.type === 'all') return true; 
+                    if (n.type === 'class' && n.targetClass === guardianMatchedStudent.class) return true; 
+                    if (n.type === 'individual' && n.targetStudentRoll == guardianMatchedStudent.roll) return true; 
+                    return false;
+                });
+
+                if(myNotices.length === 0) {
+                    guardianContainer.innerHTML = 'কোনো নতুন নোটিশ নেই।';
+                } else {
+                    [...myNotices].reverse().forEach(n => {
+                        let badge = n.type === 'individual' ? '<span style="background:red; color:white; padding:2px 6px; font-size:10px; border-radius:3px; margin-left:5px;">ব্যক্তিগত নোটিশ</span>' : '';
+                        guardianContainer.innerHTML += `<div class="notice-box" style="${n.type === 'individual' ? 'border-left: 5px solid red; background:#fff5f5;' : ''}">
+                            <h4>📌 ${n.title} ${badge}</h4>
+                            <p>${n.desc}</p>
+                            <small>তারিখ: ${n.date}</small>
+                        </div>`;
+                    });
+                }
+            }
         }
 
         function genID() {
@@ -1217,7 +1404,7 @@
                     </div>
                     <div class="admit-title">ADMIT CARD</div>
                     <table style="width:100%; margin-top:10px;">
-                        <tr><td><b>细িক্ষার্থীর নাম:</b> ${s.name}</td><td><b>শ্রেণী:</b> ${s.class}</td></tr>
+                        <tr><td><b>शिक्षার্থীর নাম:</b> ${s.name}</td><td><b>শ্রেণী:</b> ${s.class}</td></tr>
                         <tr><td><b>রোল নং:</b> ${s.roll}</td><td><b>মোবাইল:</b> ${s.phone}</td></tr>
                     </table>
                     <p style="margin-top:15px; font-size:11px; text-align:center; border-top:1px solid #ccc; padding-top:5px;">পরীক্ষার হলে প্রবেশপত্রটি সঙ্গে আনা বাধ্যতামূলক।</p>
@@ -1278,10 +1465,9 @@
         document.getElementById('notice-form').addEventListener('submit', addNotice);
         document.getElementById('edit-student-form').addEventListener('submit', updateStudentData);
 
-        // ৬. PWA (Progressive Web App) Service Worker অটো-রেজিস্ট্রেশন কোডলজিক
+        // PWA Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // ব্রাউজারে রান-টাইমে একটি ভার্চুয়াল সার্ভিস ওয়ার্কার তৈরি করে নেওয়া হচ্ছে যাতে ইনস্টলেশন পপআপ বাউন্স করে
                 const swCode = `
                     const CACHE_NAME = 'balvidyalaya-v1';
                     self.addEventListener('install', (e) => {
