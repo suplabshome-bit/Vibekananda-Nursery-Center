@@ -16,6 +16,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
+    <!-- html2pdf.js Library for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
     <style>
         :root {
             --primary: #1e3a8a;
@@ -89,6 +92,11 @@
         .marksheet-header { text-align: center; border-bottom: 2px double #000; padding-bottom: 10px; margin-bottom: 15px; }
         .doc-logo { width: 50px; height: 50px; object-fit: cover; }
         .notice-box { background: #fffde7; border-left: 5px solid #fbc02d; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+
+        /* Report Styles */
+        .report-print-container { background: #fff; padding: 20px; border: 1px solid #ccc; margin-top: 15px; border-radius: 5px; text-align: left; }
+        .report-header { text-align: center; margin-bottom: 15px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        .scrollable-table-wrapper { width: 100%; overflow-x: auto; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -261,6 +269,42 @@
             </table>
             <button id="btn-save-attendance" class="btn-block" onclick="saveAttendance()" style="margin-top:15px;">💾 হাজিরা ক্লাউডে সেভ করুন</button>
         </div>
+
+        <!-- 🌟 নতুন যুক্ত করা হলো: মাসিক হাজিরা ও PDF রিপোর্ট জেনারেটর -->
+        <div class="card" id="monthly-report-card">
+            <h3>📅 মাসিক হাজিরা রিপোর্ট (Class Wise PDF)</h3>
+            <div class="grid-stats" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 10px;">
+                <div class="form-group">
+                    <label>মাস নির্বাচন করুন:</label>
+                    <input type="month" id="report-month">
+                </div>
+                <div class="form-group">
+                    <label>ক্লাস নির্বাচন করুন:</label>
+                    <select id="report-class">
+                        <option value="">-- সকল ক্লাস --</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn-block" onclick="generateMonthlyReport()" style="background: #0284c7;">📊 রিপোর্ট তৈরি করুন</button>
+            
+            <!-- রিপোর্ট আউটপুট প্রিভিউ এবং ডাউনলোড এরিয়া -->
+            <div id="report-output-area" style="display: none;">
+                <div id="monthly-pdf-content" class="report-print-container">
+                    <div class="report-header">
+                        <h2 id="pdf-school-name">CSC বালবিদ্যালয়</h2>
+                        <p id="pdf-school-addr">মাসিক উপস্থিতি প্রতিবেদন</p>
+                        <h4 id="pdf-report-meta" style="margin-top:5px; color:#4b5563;"></h4>
+                    </div>
+                    <div class="scrollable-table-wrapper">
+                        <table id="monthly-report-table">
+                            <thead><!-- ডাইনামিক ডেট কলাম বসবে --></thead>
+                            <tbody><!-- শিক্ষার্থীদের হাজিরা বসবে --></tbody>
+                        </table>
+                    </div>
+                </div>
+                <button class="btn-block" onclick="downloadReportPDF()" style="background: #16a34a; margin-top:15px;">📥 PDF ডাউনলোড করুন</button>
+            </div>
+        </div>
     </div>
 
     <!-- ফি কালেকশন সেকশন -->
@@ -370,6 +414,7 @@
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('attendance-date').value = today;
+        document.getElementById('report-month').value = today.substring(0, 7); // Default চলতি মাস সেট হবে
 
         document.getElementById('login-role').addEventListener('change', function() {
             const pinGroup = document.getElementById('pin-group');
@@ -440,7 +485,7 @@
             if(sec === 'users') renderUsers();
             if(sec === 'notice') renderNotices();
             if(sec === 'students') renderStudents();
-            if(sec === 'attendance') renderAttendance();
+            if(sec === 'attendance') { renderAttendance(); populateClassFilter(); }
             if(sec === 'settings') { document.getElementById('pc-role').value = currentUserRole; }
             if(['fees', 'idcard', 'admit', 'marksheet'].includes(sec)) fillDropdowns(sec);
         }
@@ -464,6 +509,7 @@
                     renderNotices();
                     renderStudents();
                     renderAttendance();
+                    populateClassFilter();
                     ['fees', 'idcard', 'admit', 'marksheet'].forEach(sec => fillDropdowns(sec));
                 }
             });
@@ -476,15 +522,12 @@
             });
         }
 
-        // কঠোর রোল ভিত্তিক অ্যাক্সেস কন্ট্রোল লজিক
         function onRoleChange() {
-            // সকল বাটন ও মেনু ডিফল্টভাবে হাইড করি
             document.querySelectorAll('.mobile-menu button').forEach(b => b.style.display = 'none');
             document.getElementById('btn-menu-school-info').style.display = 'none';
             document.getElementById('btn-menu-users').style.display = 'none';
             document.getElementById('btn-menu-settings').style.display = 'block';
 
-            // ১. ড্যাশবোর্ড এবং নোটিশ সব রোলই দেখতে পাবে
             document.getElementById('m-dashboard').style.display = 'block';
 
             if(currentUserRole === 'Admin') {
@@ -499,22 +542,24 @@
                 document.getElementById('m-marksheet').style.display = 'block';
             } 
             else if(currentUserRole === 'Principal') {
-                document.getElementById('m-notice').style.display = 'block'; // নোটিশ জারি করতে পারবে
+                document.getElementById('m-notice').style.display = 'block';
                 document.getElementById('m-students').style.display = 'block';
-                document.getElementById('m-admission').style.display = 'block'; // নিউ এডমিশন পারবে
-                document.getElementById('m-idcard').style.display = 'block'; // আই কার্ড পারবে
-                document.getElementById('m-admit').style.display = 'block'; // এডমিট পারবে
+                document.getElementById('m-admission').style.display = 'block';
+                document.getElementById('m-idcard').style.display = 'block';
+                document.getElementById('m-admit').style.display = 'block';
+                // প্রিন্সিপাল মাসিক এটেনডেন্স পিডিএফ ডাউনলোড করতে পারবেন
+                document.getElementById('m-attendance').style.display = 'block';
             }
             else if(currentUserRole === 'Teacher') {
-                document.getElementById('m-attendance').style.display = 'block'; // ডেইলি এটেনডেন্স
-                document.getElementById('m-marksheet').style.display = 'block'; // মার্কশিট জেনারেট
+                document.getElementById('m-attendance').style.display = 'block';
+                document.getElementById('m-marksheet').style.display = 'block';
             }
             else if(currentUserRole === 'Guardian') {
                 document.getElementById('btn-menu-settings').style.display = 'none';
-                document.getElementById('m-students').style.display = 'block'; // স্টুডেন্ট লিস্ট (ডাউনলোড এর জন্য)
-                document.getElementById('m-idcard').style.display = 'block'; // ভিউ/ডাউনলোড আইডি
-                document.getElementById('m-admit').style.display = 'block'; // ভিউ/ডাউনলোড এডমিট
-                document.getElementById('m-marksheet').style.display = 'block'; // ভিউ/ডাউনলোড মার্কশিট
+                document.getElementById('m-students').style.display = 'block';
+                document.getElementById('m-idcard').style.display = 'block';
+                document.getElementById('m-admit').style.display = 'block';
+                document.getElementById('m-marksheet').style.display = 'block';
             }
             navTo('dashboard');
         }
@@ -599,7 +644,6 @@
             if (!tbody) return;
             tbody.innerHTML = '';
 
-            // অ্যাডমিন অ্যাকশন কলাম হ্যান্ডল করা
             const actionHeader = document.querySelector('.admin-action-header');
             if (currentUserRole === 'Admin') { actionHeader.style.display = 'table-cell'; } 
             else { actionHeader.style.display = 'none'; }
@@ -619,7 +663,6 @@
             });
         }
 
-        // স্টুডেন্ট প্রোফাইল এডিট ফাংশন (Admin Only)
         function openEditStudent(index) {
             const s = students[index];
             document.getElementById('edit-s-roll').value = index;
@@ -686,6 +729,16 @@
             if (currentVal) selectEl.value = currentVal;
         }
 
+        function populateClassFilter() {
+            const filterSelect = document.getElementById('report-class');
+            if(!filterSelect) return;
+            const classes = [...new Set(students.map(s => s.class))];
+            filterSelect.innerHTML = '<option value="">-- সকল ক্লাস --</option>';
+            classes.forEach(c => {
+                if(c) filterSelect.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+        }
+
         function collectFee(e) {
             if(e) e.preventDefault();
             const roll = document.getElementById('fee-select').value;
@@ -709,7 +762,6 @@
             const dateInput = document.getElementById('attendance-date').value;
             const dayAttendance = attendance[dateInput] || {};
 
-            // শিক্ষকরা কেবল সাবমিট করতে পারবেন, বাকিরা কেবল দেখতে পারবেন
             const saveBtn = document.getElementById('btn-save-attendance');
             if(currentUserRole === 'Teacher' || currentUserRole === 'Admin') { saveBtn.style.display = "block"; } 
             else { saveBtn.style.display = "none"; }
@@ -743,6 +795,89 @@
             saveToCloud();
             alert('আজকের হাজিরা রেকর্ড ক্লাউডে সফলভাবে সেভ হয়েছে!');
             updateDash();
+        }
+
+        // 🌟 নতুন যুক্ত করা হলো: ডায়নামিক মাসিক এটেন্ডেন্স শিট প্রোসেসর
+        function generateMonthlyReport() {
+            const targetMonth = document.getElementById('report-month').value; // format: "YYYY-MM"
+            const targetClass = document.getElementById('report-class').value;
+
+            if(!targetMonth) { alert('দয়া করে মাস নির্বাচন করুন!'); return; }
+
+            const [year, month] = targetMonth.split('-');
+            const totalDays = new Date(year, month, 0).getDate(); // ওই মাসের মোট দিন সংখ্যা
+            
+            // ফিল্টার অনুযায়ী শিক্ষার্থী বাচাই
+            const filteredStudents = students.filter(s => !targetClass || s.class === targetClass);
+            
+            if(filteredStudents.length === 0) {
+                alert('নির্বাচিত ক্লাসে কোনো শিক্ষার্থী পাওয়া যায়নি!');
+                return;
+            }
+
+            // হেডার সেট করা
+            document.getElementById('pdf-school-name').innerText = schoolInfo.name;
+            document.getElementById('pdf-school-addr').innerText = schoolInfo.addr;
+            document.getElementById('pdf-report-meta').innerText = `হাজিরা প্রতিবেদন | মাস: ${targetMonth} | ক্লাস: ${targetClass || 'সকল ক্লাস'}`;
+
+            const tableEl = document.getElementById('monthly-report-table');
+            tableEl.innerHTML = '';
+
+            // ১. টেবিল হেডার তৈরি (রোল, নাম, এবং ১ থেকে ৩১ তারিখ)
+            let theadHtml = `<tr><th>রোল</th><th>শিক্ষার্থীর নাম</th><th>ক্লাস</th>`;
+            for(let i=1; i<=totalDays; i++) {
+                theadHtml += `<th style="padding:4px; font-size:10px;">${i}</th>`;
+            }
+            theadHtml += `<th>মোট (P)</th></tr>`;
+            tableEl.innerHTML += `<thead>${theadHtml}</thead>`;
+
+            // ২. বডি বা শিক্ষার্থীদের উপস্থিতি ডেটা রো তৈরি
+            let tbodyHtml = '';
+            filteredStudents.forEach(s => {
+                let rowHtml = `<tr><td>${s.roll}</td><td><b>${s.name}</b></td><td>${s.class}</td>`;
+                let presentCount = 0;
+
+                for(let d=1; d<=totalDays; d++) {
+                    const dayStr = d < 10 ? '0' + d : d;
+                    const fullDateKey = `${targetMonth}-${dayStr}`; // YYYY-MM-DD
+                    
+                    let status = '-';
+                    if(attendance[fullDateKey] && attendance[fullDateKey][s.roll]) {
+                        status = attendance[fullDateKey][s.roll];
+                    }
+
+                    if(status === 'P') {
+                        rowHtml += `<td style="color:green; font-weight:bold; text-align:center; padding:3px;">P</td>`;
+                        presentCount++;
+                    } else if(status === 'A') {
+                        rowHtml += `<td style="color:red; font-weight:bold; text-align:center; padding:3px;">A</td>`;
+                    } else {
+                        rowHtml += `<td style="color:#aaa; text-align:center; padding:3px;">-</td>`;
+                    }
+                }
+                rowHtml += `<td style="text-align:center; font-weight:bold; background:#f0fdf4;">${presentCount} দিন</td></tr>`;
+                tbodyHtml += rowHtml;
+            });
+
+            tableEl.innerHTML += `<tbody>${tbodyHtml}</tbody>`;
+            document.getElementById('report-output-area').style.display = 'block';
+        }
+
+        // 🌟 নতুন যুক্ত করা হলো: html2pdf লাইব্রেরি ব্যবহার করে রিপোর্ট PDF ডাউনলোড লজিক
+        function downloadReportPDF() {
+            const element = document.getElementById('monthly-pdf-content');
+            const targetMonth = document.getElementById('report-month').value;
+            const targetClass = document.getElementById('report-class').value || 'All';
+            
+            const opt = {
+                margin:       10,
+                filename:     `Attendance_${targetClass}_${targetMonth}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // ল্যান্ডস্কেপ মোডে ওয়াইড টেবিল সুন্দর দেখাবে
+            };
+
+            html2pdf().set(opt).from(element).save();
         }
 
         function addNotice(e) {
@@ -780,7 +915,6 @@
             if (!s) return;
 
             out.style.display = 'block';
-            // প্রিন্ট বাটন কেবল এডমিন ও প্রিন্সিপাল দেখতে পাবেন
             if (currentUserRole === 'Admin' || currentUserRole === 'Principal') btn.style.display = 'block';
 
             const photoStyle = s.photo ? `background-image: url('${s.photo}'); font-size:0;` : '';
@@ -844,7 +978,6 @@
             const s = students.find(student => student.roll == roll);
             if (!s) return;
 
-            // রোল ভিত্তিক ইনপুট ও বাটন নিয়ন্ত্রণ
             const marksInputWrapper = document.getElementById('marks-input-wrapper');
             const makeBtn = document.getElementById('btn-make-marksheet');
             if(currentUserRole === 'Teacher' || currentUserRole === 'Admin') {
@@ -861,7 +994,7 @@
             const total = eng + math + ben;
 
             out.style.display = 'block';
-            btn.style.display = 'block'; // ডাউনলোড/প্রিন্ট সবার জন্যই উন্মুক্ত
+            btn.style.display = 'block';
 
             out.innerHTML = `
                 <div class="marksheet-box">
@@ -885,7 +1018,6 @@
             `;
         }
 
-        // ফর্ম সাবমিট ইভেন্ট লিসেনার সেটআপ
         document.getElementById('school-form').addEventListener('submit', saveSchoolInfo);
         document.getElementById('user-form').addEventListener('submit', createUser);
         document.getElementById('admission-form').addEventListener('submit', registerStudent);
@@ -893,7 +1025,6 @@
         document.getElementById('notice-form').addEventListener('submit', addNotice);
         document.getElementById('edit-student-form').addEventListener('submit', updateStudentData);
 
-        // PWA Service Worker রেজিষ্ট্রেশন (আইকন ভিত্তিক অ্যাপ করার জন্য)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').then(reg => {
