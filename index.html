@@ -5,21 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSC বালবিদ্যালয় - ম্যানেজমেন্ট সিস্টেম</title>
     
-    <!-- <link rel="icon" type="image/png" href="icon.png">
-<link rel="apple-touch-icon" href="icon.png">
-
--->
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="shortcut icon" href="icon.png" type="image/x-icon">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e3a8a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link class="apple-touch-icon" href="icon.png">
 
-    <!-- Firebase Libraries -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- html2pdf.js Library for PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <style>
@@ -129,7 +125,6 @@
 </head>
 <body>
 
-    <!-- ১. লগইন স্ক্রিন -->
     <div id="login-screen">
         <div class="login-box">
             <h2>🔐 বালবিদ্যালয় লগইন</h2>
@@ -155,7 +150,6 @@
         </div>
     </div>
 
-    <!-- ২. মূল অ্যাপ্লিকেশনের হেডার -->
     <header>
         <div class="brand">
             <img id="app-logo" src="" alt="Logo" style="display:none;">
@@ -173,9 +167,6 @@
         </div>
     </header>
 
-    <!-- ৩. বিভিন্ন সেকশন সমূহ -->
-
-    <!-- ড্যাশবোর্ড সেকশন -->
     <div id="section-dashboard" class="app-section active">
         <div class="grid-stats" id="dashboard-stats-grid">
             <div class="stat-box"><h5>মোট শিক্ষার্থী</h5><p id="stat-students">0 জন</p></div>
@@ -195,7 +186,6 @@
         </div>
     </div>
 
-    <!-- স্কুল প্রোফাইল সেকশন -->
     <div id="section-school-info" class="app-section">
         <div class="card">
             <h3>🏫 বিদ্যালয় প্রোফাইল সেটআপ</h3>
@@ -208,7 +198,6 @@
         </div>
     </div>
 
-    <!-- ইউজার তৈরি সেকশন -->
     <div id="section-users" class="app-section">
         <div class="card">
             <h3>👥 স্টাফ ও শিক্ষক অ্যাকাউন্ট তৈরি (Only Admin)</h3>
@@ -234,7 +223,6 @@
         </div>
     </div>
 
-    <!-- নোটিশ বোর্ড সেকশন -->
     <div id="section-notice" class="app-section">
         <div class="card">
             <h3 id="notice-panel-title">📢 টার্গেটেড নোটিশ জারি প্যানেল</h3>
@@ -249,13 +237,11 @@
                     </select>
                 </div>
                 
-                <!-- ক্লাস সিলেকশন ড্রপডাউন -->
                 <div class="form-group" id="n-class-wrapper" style="display:none;">
                     <label>ক্লাস বাছুন:</label>
                     <select id="n-target-class"></select>
                 </div>
 
-                <!-- শিক্ষার্থী সিলেকশন ড্রপডাউন -->
                 <div class="form-group" id="n-student-wrapper" style="display:none;">
                     <label>শিক্ষার্থী বাছুন:</label>
                     <select id="n-target-student"></select>
@@ -268,14 +254,12 @@
             </form>
         </div>
         
-        <!-- স্টাফদের প্যানেলে দেখার জন্য ম্যানেজমেন্ট লিস্ট -->
         <div class="card" id="staff-notice-list-card">
             <h3>📋 প্রকাশিত সকল নোটিশের তালিকা (ম্যানেজমেন্ট)</h3>
             <div id="staff-notice-management-container">লোড হচ্ছে...</div>
         </div>
     </div>
 
-    <!-- শিক্ষার্থী তালিকা সেকশন -->
     <div id="section-students" class="app-section">
         <div class="card">
             <h3>📋 বিদ্যালয়ের সকল শিক্ষার্থী</h3>
@@ -286,13 +270,12 @@
         </div>
     </div>
 
-    <!-- স্টুডেন্ট প্রোফাইল এডিট ফর্ম সেকশন -->
     <div id="section-edit-student" class="app-section">
         <div class="card">
             <h3>✏️ শিক্ষার্থীর প্রোফাইল সংশোধন (Edit Profile)</h3>
             <form id="edit-student-form">
                 <input type="hidden" id="edit-s-roll">
-                <div class="form-group"><label>暗ক্ষার্থীদের নাম:</label><input type="text" id="edit-s-name" required></div>
+                <div class="form-group"><label>শিক্ষার্থীদের নাম:</label><input type="text" id="edit-s-name" required></div>
                 <div class="form-group"><label>শ্রেণী (Class):</label><input type="text" id="edit-s-class" required></div>
                 <div class="form-group"><label>অভিভাবকের নাম:</label><input type="text" id="edit-s-guard" required></div>
                 <div class="form-group"><label>মোবাইল নম্বর:</label><input type="tel" id="edit-s-phone" maxlength="10" required></div>
@@ -302,35 +285,32 @@
         </div>
     </div>
 
-    <!-- নতুন এডমিশন সেকশন -->
     <div id="section-admission" class="app-section">
         <div class="card">
             <h3>🎒 নতুন শিক্ষার্থীর অনলাইন অ্যাডমিশন ফর্ম</h3>
             <form id="admission-form">
-                <div class="form-group"><label>शिक्षার্থীর নাম:</label><input type="text" id="s-name" required></div>
+                <div class="form-group"><label>শিক্ষার্থীর নাম:</label><input type="text" id="s-name" required></div>
                 <div class="form-group"><label>শ্রেণী (Class):</label><input type="text" id="s-class" placeholder="উদাঃ Play, Nursery" required></div>
                 <div class="form-group"><label>অভিভাবকের নাম:</label><input type="text" id="s-guard" required></div>
                 <div class="form-group"><label>মোবাইল নম্বর:</label><input type="tel" id="s-phone" maxlength="10" required></div>
-                <div class="form-group"><label>शिक्षার্থীর ছবি:</label><input type="file" id="s-photo" accept="image/*" onchange="processFile('photo')"></div>
+                <div class="form-group"><label>শিক্ষার্থীর ছবি:</label><input type="file" id="s-photo" accept="image/*" onchange="processFile('photo')"></div>
                 <div class="form-group"><label>জন্ম সনদ/আধার (PDF/Image):</label><input type="file" id="s-doc" accept="image/*" onchange="processFile('doc')"></div>
                 <button type="submit" class="btn-block">📝 ক্লাউড ডেটাবেসে ভর্তি নিশ্চিত করুন</button>
             </form>
         </div>
     </div>
 
-    <!-- হাজিরা বা অ্যাটেনডেন্স সেকশন -->
     <div id="section-attendance" class="app-section">
         <div class="card" id="daily-attendance-card">
             <h3>📆 দৈনিক ডিজিটাল হাজিরা খাতা</h3>
             <div class="form-group"><label>তারিখ নির্বাচন:</label><input type="date" id="attendance-date" onchange="renderAttendance()"></div>
             <table id="attendance-table">
-                <thead><tr><th>রোল</th><th>शिक्षার্থীর নাম</th><th>উপস্থিতি</th></tr></thead>
+                <thead><tr><th>রোল</th><th>শিক্ষার্থীর নাম</th><th>উপস্থিতি</th></tr></thead>
                 <tbody></tbody>
             </table>
             <button id="btn-save-attendance" class="btn-block" onclick="saveAttendance()" style="margin-top:15px;">💾 হাজিরা ক্লাউডে সেভ করুন</button>
         </div>
 
-        <!-- মাসিক হাজিরা ও PDF রিপোর্ট জেনারেটর -->
         <div class="card" id="monthly-report-card">
             <h3>📅 মাসিক হাজিরা রিপোর্ট (Class Wise PDF)</h3>
             <div class="grid-stats" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 10px;">
@@ -366,7 +346,6 @@
         </div>
     </div>
 
-    <!-- ফি কালেকশন সেকশন -->
     <div id="section-fees" class="app-section">
         <div class="card">
             <h3>💰 ফিস কালেকশন এন্ট্রি</h3>
@@ -379,7 +358,6 @@
         </div>
     </div>
 
-    <!-- আইডি কার্ড জেনারেটর সেকশন -->
     <div id="section-idcard" class="app-section">
         <div class="card">
             <h3>🪪 আইডি কার্ড তৈরি ও ডাউনলোড প্যানেল</h3>
@@ -399,7 +377,6 @@
         </div>
     </div>
 
-    <!-- এডমিট কার্ড সেকশন -->
     <div id="section-admit" class="app-section">
         <div class="card">
             <h3>🎟️ পরীক্ষার প্রবেশপত্র (Admit Card)</h3>
@@ -411,7 +388,6 @@
         </div>
     </div>
 
-    <!-- মার্কশিট সেকশন -->
     <div id="section-marksheet" class="app-section">
         <div class="card">
             <h3>📊 প্রোগ্রেস রিপোর্ট / মার্কশিট জেনারেটর</h3>
@@ -429,12 +405,10 @@
         </div>
     </div>
 
-    <!-- অভিভাবক বিশেষ ডেডিকেটেড ড্যাশবোর্ড সেকশন -->
     <div id="section-guardian-hub" class="app-section">
         <div class="card">
             <h3>👪 অভিভাবক তথ্য কেন্দ্র (Guardian Portal)</h3>
             
-            <!-- ছাত্রের লাইভ প্রোফাইল ও এটেনডেন্স উইজেট -->
             <div class="guardian-profile-card" id="g-student-profile-widget">
                 <div class="g-prof-header">
                     <img class="g-prof-avatar" id="g-avatar" src="" alt="Student Photo">
@@ -463,14 +437,12 @@
             </div>
         </div>
 
-        <!-- অভিভাবক ড্যাশবোর্ডে লাইভ নোটিশ ডিসপ্লে উইজেট -->
         <div class="card">
             <h3>📢 বিদ্যালয়ের নোটিশ বোর্ড</h3>
             <div id="guardian-notice-list-container">নোটিশ লোড হচ্ছে...</div>
         </div>
     </div>
 
-    <!-- পিন সেটআপ সেকশন -->
     <div id="section-settings" class="app-section">
         <div class="card">
             <h3>⚙️ সিকিউরিটি পিন কোড পরিবর্তন</h3>
@@ -483,7 +455,6 @@
         </div>
     </div>
 
-    <!-- ৪. মোবাইল বটম নেভিগেশন বার -->
     <div class="mobile-menu">
         <button id="m-dashboard" onclick="navTo('dashboard')"><span>🏠</span>ড্যাশবোর্ড</button>
         <button id="m-guardian-hub" onclick="navTo('guardian-hub')"><span>👪</span>আমার সন্তান</button>
@@ -497,7 +468,6 @@
         <button id="m-marksheet" onclick="navTo('marksheet')"><span>📊</span>মার্কশিট</button>
     </div>
 
-    <!-- ৫. জাভাস্ক্রিপ্ট লজিক ও কন্ট্রোল -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyBBmD0MIyVDanfpKwqW9cF-8bhrofKd4V0",
@@ -1143,7 +1113,7 @@
             html2pdf().set(opt).from(element).save();
         }
 
-        /* नोটিশ বোর্ডের আপগ্রেডেড টার্গেটেড, এডিট ও ডিলিট লজিক সমূহ */
+        /* নোটিশ বোর্ডের আপগ্রেডেড টার্গেটেড, এডিট ও ডিলিট লজিক সমূহ */
         function setupNoticeTargetFilters() {
             const classSelect = document.getElementById('n-target-class');
             const studentSelect = document.getElementById('n-target-student');
@@ -1407,7 +1377,7 @@
                     </div>
                     <div class="admit-title">ADMIT CARD</div>
                     <table style="width:100%; margin-top:10px;">
-                        <tr><td><b>शिक्षার্থীর নাম:</b> ${s.name}</td><td><b>শ্রেণী:</b> ${s.class}</td></tr>
+                        <tr><td><b>শিক্ষার্থীর নাম:</b> ${s.name}</td><td><b>শ্রেণী:</b> ${s.class}</td></tr>
                         <tr><td><b>রোল নং:</b> ${s.roll}</td><td><b>মোবাইল:</b> ${s.phone}</td></tr>
                     </table>
                     <p style="margin-top:15px; font-size:11px; text-align:center; border-top:1px solid #ccc; padding-top:5px;">পরীক্ষার হলে প্রবেশপত্রটি সঙ্গে আনা বাধ্যতামূলক।</p>
